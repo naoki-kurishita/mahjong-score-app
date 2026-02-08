@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="麻雀スコア">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <title>🀄 麻雀スコア計算機</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-light: #f8fafc;
+            --bg-dark: #1e293b;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.2);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: white;
+            border: none;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .nav-tab:active {
+            background: var(--bg-light);
+        }
+
+        /* Content Sections */
+        .content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Game Setup Section */
+        .game-setup {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
+        .player-inputs {
+            display: grid;
+            gap: 15px;
+        }
+
+        .player-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-number {
+            width: 35px;
+            height: 35px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 1em;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Button Styles */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Score Input Section */
+        .round-info {
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .round-number {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .score-inputs {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .score-input-row {
+            display: flex;
+            align-items: center;
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: 12px;
+            gap: 15px;
+        }
+
+        .player-name-display {
+            flex: 1;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .score-input {
+            width: 140px;
+            padding: 12px;
+            font-size: 1.2em;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: white;
+        }
+
+        .score-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .validation-error {
+            background: #fee;
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            display: none;
+        }
+
+        .validation-error.show {
+            display: block;
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .scoreboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .scoreboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .scoreboard-table th {
+            background: var(--bg-light);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: var(--text-light);
+        }
+
+        .scoreboard-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .scoreboard-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rank {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #333; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); color: #333; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32 0%, #e09856 100%); }
+        .rank-4 { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
+
+        .player-name-cell {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .score-cell {
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        .score-positive {
+            color: var(--success);
+        }
+
+        .score-negative {
+            color: var(--danger);
+        }
+
+        /* History Section */
+        .history-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .history-item {
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .history-round {
+            font-size: 0.9em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .history-scores {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .history-score-item {
+            font-size: 0.95em;
+        }
+
+        /* Settings Section */
+        .settings-group {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .settings-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.1em;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: var(--text-light);
+            color: white;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.3s;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .score-input {
+                width: 110px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🀄 麻雀スコア計算機</h1>
+            <div class="subtitle">簡単・正確・自動計算</div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('setup')">セットアップ</button>
+            <button class="nav-tab" onclick="switchTab('game')" id="gameTab">ゲーム</button>
+            <button class="nav-tab" onclick="switchTab('scoreboard')">スコア</button>
+            <button class="nav-tab" onclick="switchTab('history')">履歴</button>
+        </div>
+
+        <!-- Setup Section -->
+        <div id="setupContent" class="content active">
+            <div class="game-setup">
+                <div class="section-title">プレイヤー名を入力</div>
+                <div class="player-inputs">
+                    <div class="player-input-group">
+                        <div class="player-number">1</div>
+                        <input type="text" class="input-field" id="player1" placeholder="プレイヤー1" value="サトウ">
+                    </div>
+                    <div class="player-input-group">
+                        <div class="player-number">2</div>
+                        <input type="text" class="input-field" id="player2" placeholder="プレイヤー2" value="ミヤオ">
+                    </div>
+                    <div class="player-input-group">
+                        <div class="player-number">3</div>
+                        <input type="text" class="input-field" id="player3" placeholder="プレイヤー3" value="ウシジマ">
+                    </div>
+                    <div class="player-input-group">
+                        <div class="player-number">4</div>
+                        <input type="text" class="input-field" id="player4" placeholder="プレイヤー4" value="クリシタ">
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">初期持ち点（実際の点数）</label>
+                <input type="number" class="settings-input" id="initialPoints" value="25000" readonly style="background: #f1f5f9;">
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">計算基準点（30,000点として計算）</label>
+                <input type="number" class="settings-input" id="calculationBase" value="30000" readonly style="background: #f1f5f9;">
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">ウマ（1位 / 4位は自動で反対の値）</label>
+                <input type="number" class="settings-input" id="uma1" value="25" oninput="updateUmaDisplay()">
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">ウマ（2位 / 3位は自動で反対の値）</label>
+                <input type="number" class="settings-input" id="uma2" value="10" oninput="updateUmaDisplay()">
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">トビウマ</label>
+                <input type="number" class="settings-input" id="tobiuma" value="10">
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
+                    ※ マイナス点が出た場合、トバした人に加算されます
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">チップ単価</label>
+                <input type="number" class="settings-input" id="chipPrice" value="5">
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
+                    ※ チップ1枚あたりのポイント
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="startGame()">
+                <span>🎮</span>
+                <span>ゲーム開始</span>
+            </button>
+        </div>
+
+        <!-- Game Section -->
+        <div id="gameContent" class="content">
+            <div class="round-info">
+                <div class="round-number" id="roundNumber">第1回戦</div>
+            </div>
+
+            <div class="validation-error" id="validationError"></div>
+
+            <div class="score-inputs" id="scoreInputs">
+                <!-- Dynamic score inputs will be inserted here -->
+            </div>
+
+            <div id="tobiSelection" style="display: none; margin-bottom: 20px;">
+                <div style="background: #fef3c7; padding: 15px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
+                    <div style="font-weight: 600; color: #92400e; margin-bottom: 10px;">⚠️ マイナス点が出ました</div>
+                    <div style="font-size: 0.9em; color: #78350f;">トバした人を選択してください（トビウマ: <span id="tobiumaDisplay"></span>点）</div>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">トバした人</label>
+                    <select id="tobiPlayerSelect" class="settings-input" style="cursor: pointer;">
+                        <option value="">選択してください</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="saveRound()">
+                <span>✓</span>
+                <span>スコア確定</span>
+            </button>
+
+            <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display: none; margin-top: 10px;">
+                編集をキャンセル
+            </button>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="switchTab('scoreboard')">スコアボード</button>
+                <button class="btn btn-danger" onclick="showChipInput()">ゲーム終了</button>
+            </div>
+        </div>
+
+        <!-- Chip Input Section -->
+        <div id="chipContent" class="content">
+            <div class="section-title">🎰 チップ入力</div>
+            
+            <div style="background: #dbeafe; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 0.95em; color: #1e40af;">
+                    各プレイヤーのチップ数を入力してください<br>
+                    <span style="font-size: 0.85em; color: #64748b;">チップ単価: <span id="chipPriceDisplay"></span>点 / 合計が0になる必要があります</span>
+                </div>
+            </div>
+
+            <div class="validation-error" id="chipValidationError"></div>
+
+            <div class="player-inputs" id="chipInputs">
+                <!-- Dynamic chip inputs will be inserted here -->
+            </div>
+
+            <button class="btn btn-success" onclick="applyChipsAndFinish()" style="margin-top: 20px;">
+                <span>✓</span>
+                <span>チップを反映して終了</span>
+            </button>
+
+            <button class="btn btn-secondary" onclick="skipChipsAndFinish()" style="margin-top: 10px;">
+                チップなしで終了
+            </button>
+        </div>
+
+        <!-- Scoreboard Section -->
+        <div id="scoreboardContent" class="content">
+            <div class="scoreboard">
+                <div class="scoreboard-header">現在のスコア</div>
+                <table class="scoreboard-table">
+                    <thead>
+                        <tr>
+                            <th>順位</th>
+                            <th>プレイヤー</th>
+                            <th style="text-align: right;">ポイント</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreboardBody">
+                        <!-- Dynamic scoreboard rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-primary" onclick="switchTab('game')" style="margin-top: 20px;">
+                次の回戦へ
+            </button>
+        </div>
+
+        <!-- History Section -->
+        <div id="historyContent" class="content">
+            <div class="section-title">対戦履歴</div>
+            <div class="history-list" id="historyList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-text">まだ履歴がありません</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Game State
+        let gameState = {
+            players: [],
+            rounds: [],
+            currentRound: 0,
+            settings: {
+                initialPoints: 25000,      // Actual starting points
+                calculationBase: 30000,    // Base for calculation
+                uma1: 25,
+                uma2: 10,
+                uma3: -10,
+                uma4: -25,
+                tobiuma: 10,
+                chipPrice: 5
+            },
+            gameStarted: false
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameState();
+            updateUI();
+        });
+
+        // Update Uma (no display needed, just for consistency)
+        function updateUmaDisplay() {
+            // Function kept for oninput handlers, but no display updates needed
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Content').classList.add('active');
+
+            // Update scoreboard when switching to it
+            if (tabName === 'scoreboard') {
+                updateScoreboard();
+            }
+
+            // Update history when switching to it
+            if (tabName === 'history') {
+                updateHistory();
+            }
+        }
+
+        // Start Game
+        function startGame() {
+            const player1 = document.getElementById('player1').value.trim() || 'プレイヤー1';
+            const player2 = document.getElementById('player2').value.trim() || 'プレイヤー2';
+            const player3 = document.getElementById('player3').value.trim() || 'プレイヤー3';
+            const player4 = document.getElementById('player4').value.trim() || 'プレイヤー4';
+
+            gameState.players = [
+                { name: player1, totalPoints: 0, rounds: [] },
+                { name: player2, totalPoints: 0, rounds: [] },
+                { name: player3, totalPoints: 0, rounds: [] },
+                { name: player4, totalPoints: 0, rounds: [] }
+            ];
+
+            gameState.settings.initialPoints = 25000;
+            gameState.settings.calculationBase = 30000;
+            gameState.settings.uma1 = parseInt(document.getElementById('uma1').value) || 25;
+            gameState.settings.uma2 = parseInt(document.getElementById('uma2').value) || 10;
+            gameState.settings.uma3 = -gameState.settings.uma2;  // 3rd place is negative of 2nd
+            gameState.settings.uma4 = -gameState.settings.uma1;  // 4th place is negative of 1st
+            gameState.settings.tobiuma = parseInt(document.getElementById('tobiuma').value) || 10;
+            gameState.settings.chipPrice = parseInt(document.getElementById('chipPrice').value) || 5;
+            
+            gameState.currentRound = 1;
+            gameState.gameStarted = true;
+            gameState.rounds = [];
+
+            saveGameState();
+            setupScoreInputs();
+            
+            // Enable game tab
+            document.getElementById('gameTab').style.pointerEvents = 'auto';
+            document.getElementById('gameTab').style.opacity = '1';
+            
+            // Switch to game tab
+            switchTab('game');
+            showToast('ゲームを開始しました！');
+        }
+
+        // Setup Score Inputs
+        function setupScoreInputs() {
+            const container = document.getElementById('scoreInputs');
+            container.innerHTML = '';
+
+            gameState.players.forEach((player, index) => {
+                const row = document.createElement('div');
+                row.className = 'score-input-row';
+                row.innerHTML = `
+                    <div class="player-name-display">${player.name}</div>
+                    <input type="number" 
+                           class="score-input" 
+                           id="score${index}" 
+                           placeholder="点数"
+                           inputmode="numeric"
+                           onchange="checkForNegativeScores()">
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
+            document.getElementById('tobiSelection').style.display = 'none';
+        }
+
+        // Check for negative scores
+        function checkForNegativeScores() {
+            const scores = [];
+            let hasNegative = false;
+            
+            for (let i = 0; i < 4; i++) {
+                const scoreInput = document.getElementById(`score${i}`);
+                const score = parseInt(scoreInput.value);
+                
+                if (!isNaN(score)) {
+                    scores.push(score);
+                    if (score < 0) {
+                        hasNegative = true;
+                    }
+                }
+            }
+
+            const tobiSelection = document.getElementById('tobiSelection');
+            
+            if (hasNegative && scores.length === 4) {
+                // Show tobi selection
+                tobiSelection.style.display = 'block';
+                document.getElementById('tobiumaDisplay').textContent = gameState.settings.tobiuma;
+                
+                // Populate player select (exclude players with negative scores)
+                const select = document.getElementById('tobiPlayerSelect');
+                select.innerHTML = '<option value="">選択してください</option>';
+                
+                gameState.players.forEach((player, index) => {
+                    const score = parseInt(document.getElementById(`score${index}`).value);
+                    if (score >= 0) {  // Only include players without negative scores
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = player.name;
+                        select.appendChild(option);
+                    }
+                });
+            } else {
+                tobiSelection.style.display = 'none';
+            }
+        }
+
+        // Validate Scores
+        function validateScores(scores) {
+            const total = scores.reduce((sum, score) => sum + score, 0);
+            const initialTotal = 100000;  // 25000 x 4 players
+
+            if (total !== initialTotal) {
+                return {
+                    valid: false,
+                    message: `合計点数が${initialTotal.toLocaleString()}点になっていません（現在: ${total.toLocaleString()}点）`
+                };
+            }
+
+            return { valid: true };
+        }
+
+        // Calculate Final Scores with Uma
+        function calculateFinalScores(rawScores, tobiPlayerIndex = null) {
+            const { uma1, uma2, uma3, uma4, calculationBase, tobiuma } = gameState.settings;
+            
+            console.log('=== Calculate Final Scores ===');
+            console.log('Raw scores:', rawScores);
+            console.log('Tobi player index:', tobiPlayerIndex);
+            
+            // Create array with player index and raw score
+            const playersWithScores = rawScores.map((score, index) => ({
+                index,
+                rawScore: score,
+                adjustedScore: score
+            }));
+
+            // Sort by raw score (descending)
+            playersWithScores.sort((a, b) => b.rawScore - a.rawScore);
+
+            console.log('Sorted:');
+            playersWithScores.forEach((p, i) => console.log(`  ${i+1}位: Player ${p.index}, ${p.rawScore}点`));
+
+            // Calculate adjusted scores for 2nd, 3rd, and 4th place
+            playersWithScores[1].adjustedScore = (playersWithScores[1].rawScore - calculationBase) / 1000 + uma2;
+            playersWithScores[2].adjustedScore = (playersWithScores[2].rawScore - calculationBase) / 1000 + uma3;
+            playersWithScores[3].adjustedScore = (playersWithScores[3].rawScore - calculationBase) / 1000 + uma4;
+
+            console.log('Before rounding:');
+            console.log(`  2位: ${playersWithScores[1].adjustedScore}`);
+            console.log(`  3位: ${playersWithScores[2].adjustedScore}`);
+            console.log(`  4位: ${playersWithScores[3].adjustedScore}`);
+
+            // Add tobiuma if there's a tobi (before rounding)
+            if (tobiPlayerIndex !== null) {
+                // Find the tobi player in sorted array
+                const tobiPlayerInSorted = playersWithScores.find(p => p.index === tobiPlayerIndex);
+                if (tobiPlayerInSorted && tobiPlayerInSorted !== playersWithScores[0]) {
+                    tobiPlayerInSorted.adjustedScore += tobiuma;
+                    console.log(`Added ${tobiuma} to tobi player (Player ${tobiPlayerIndex})`);
+                }
+                
+                // Subtract tobiuma from players with negative raw scores
+                playersWithScores.forEach((player, idx) => {
+                    if (player.rawScore < 0 && idx !== 0) {
+                        player.adjustedScore -= tobiuma;
+                        console.log(`Subtracted ${tobiuma} from Player ${player.index} (negative score)`);
+                    }
+                });
+            }
+
+            // CRITICAL: Round 2nd, 3rd, 4th place scores first
+            playersWithScores[1].adjustedScore = Math.round(playersWithScores[1].adjustedScore);
+            playersWithScores[2].adjustedScore = Math.round(playersWithScores[2].adjustedScore);
+            playersWithScores[3].adjustedScore = Math.round(playersWithScores[3].adjustedScore);
+
+            console.log('After rounding:');
+            console.log(`  2位: ${playersWithScores[1].adjustedScore}`);
+            console.log(`  3位: ${playersWithScores[2].adjustedScore}`);
+            console.log(`  4位: ${playersWithScores[3].adjustedScore}`);
+
+            // Then calculate 1st place to ensure total is exactly 0
+            const othersSum = playersWithScores[1].adjustedScore + playersWithScores[2].adjustedScore + playersWithScores[3].adjustedScore;
+            playersWithScores[0].adjustedScore = -othersSum;
+
+            console.log(`  1位: ${playersWithScores[0].adjustedScore} (= -(${othersSum}))`);
+
+            // Handle tobi for 1st place (if they're the tobi player)
+            if (tobiPlayerIndex !== null && playersWithScores[0].index === tobiPlayerIndex) {
+                playersWithScores[0].adjustedScore += tobiuma;
+                console.log(`Added ${tobiuma} to 1st place (tobi player)`);
+                // Adjust to maintain zero sum
+                const adjustment = tobiuma / 3;
+                playersWithScores[1].adjustedScore -= Math.round(adjustment);
+                playersWithScores[2].adjustedScore -= Math.round(adjustment);
+                playersWithScores[3].adjustedScore -= Math.round(adjustment - (tobiuma - Math.round(adjustment) * 3));
+            }
+
+            // Create result array in original order
+            const result = new Array(4);
+            playersWithScores.forEach(player => {
+                result[player.index] = {
+                    rawScore: player.rawScore,
+                    finalScore: player.adjustedScore,
+                    rank: playersWithScores.findIndex(p => p.index === player.index) + 1
+                };
+                
+                // Add tobi markers
+                if (tobiPlayerIndex === player.index) {
+                    result[player.index].tobiuma = tobiuma;
+                }
+                if (player.rawScore < 0 && tobiPlayerIndex !== null) {
+                    result[player.index].tobiPenalty = -tobiuma;
+                }
+            });
+
+            const checkSum = result[0].finalScore + result[1].finalScore + result[2].finalScore + result[3].finalScore;
+            console.log('Final scores (original order):');
+            result.forEach((r, i) => console.log(`  Player ${i}: ${r.finalScore}`));
+            console.log(`Total: ${checkSum}`);
+            console.log('===========================\n');
+
+            return result;
+        }
+
+        // Edit Round
+        let editingRoundIndex = null;
+
+        function editRound(roundIndex) {
+            console.log('editRound called with index:', roundIndex);
+            console.log('Round data:', gameState.rounds[roundIndex]);
+            
+            if (!confirm(`第${gameState.rounds[roundIndex].roundNumber}回戦を編集しますか？`)) {
+                return;
+            }
+
+            editingRoundIndex = roundIndex;
+            const round = gameState.rounds[roundIndex];
+
+            // Switch to game tab
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab')[1].classList.add('active');
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            document.getElementById('gameContent').classList.add('active');
+
+            // Update round number display
+            document.getElementById('roundNumber').textContent = `第${round.roundNumber}回戦（編集中）`;
+
+            // Fill in the scores
+            gameState.players.forEach((player, index) => {
+                const input = document.getElementById(`score${index}`);
+                if (input) {
+                    input.value = round.scores[index].rawScore;
+                    console.log(`Set score${index} to ${round.scores[index].rawScore}`);
+                }
+            });
+
+            // Check for negative scores and set tobi player if applicable
+            setTimeout(() => {
+                checkForNegativeScores();
+                if (round.tobiPlayer) {
+                    const tobiPlayerIndex = gameState.players.findIndex(p => p.name === round.tobiPlayer);
+                    if (tobiPlayerIndex !== -1) {
+                        document.getElementById('tobiPlayerSelect').value = tobiPlayerIndex;
+                    }
+                }
+            }, 100);
+
+            // Change button text and show cancel button
+            const saveButton = document.querySelector('#gameContent .btn-success');
+            saveButton.innerHTML = '<span>✓</span><span>編集を保存</span>';
+            document.getElementById('cancelEditBtn').style.display = 'block';
+
+            showToast('編集モードに切り替えました');
+        }
+
+        function cancelEdit() {
+            if (!confirm('編集をキャンセルしますか？')) {
+                return;
+            }
+
+            editingRoundIndex = null;
+
+            // Clear inputs
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`score${i}`).value = '';
+            }
+            document.getElementById('tobiSelection').style.display = 'none';
+
+            // Reset button text and hide cancel button
+            const saveButton = document.querySelector('#gameContent .btn-success');
+            saveButton.innerHTML = '<span>✓</span><span>スコア確定</span>';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+
+            // Reset round number
+            document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
+
+            showToast('編集をキャンセルしました');
+        }
+
+        // Save Round
+        function saveRound() {
+            const scores = [];
+            let hasNegative = false;
+            
+            for (let i = 0; i < 4; i++) {
+                const scoreInput = document.getElementById(`score${i}`);
+                const score = parseInt(scoreInput.value);
+                
+                if (isNaN(score)) {
+                    showValidationError('すべてのプレイヤーの点数を入力してください');
+                    return;
+                }
+                scores.push(score);
+                
+                if (score < 0) {
+                    hasNegative = true;
+                }
+            }
+
+            // Validate scores total (must be 100,000)
+            const validation = validateScores(scores);
+            if (!validation.valid) {
+                showValidationError(validation.message);
+                return;
+            }
+
+            // Check if tobi player is selected when there's negative score
+            let tobiPlayerIndex = null;
+            if (hasNegative) {
+                const tobiSelect = document.getElementById('tobiPlayerSelect');
+                tobiPlayerIndex = tobiSelect.value;
+                
+                if (!tobiPlayerIndex) {
+                    showValidationError('トバした人を選択してください');
+                    return;
+                }
+                
+                tobiPlayerIndex = parseInt(tobiPlayerIndex);
+            }
+
+            // Calculate final scores
+            const finalScores = calculateFinalScores(scores, tobiPlayerIndex);
+
+            if (editingRoundIndex !== null) {
+                // Editing existing round
+                const oldRound = gameState.rounds[editingRoundIndex];
+                
+                // Subtract old scores from player totals
+                gameState.players.forEach((player, index) => {
+                    player.totalPoints -= oldRound.scores[index].finalScore;
+                });
+
+                // Update round data
+                oldRound.scores = finalScores;
+                oldRound.tobiPlayer = tobiPlayerIndex !== null ? gameState.players[tobiPlayerIndex].name : null;
+
+                // Add new scores to player totals
+                gameState.players.forEach((player, index) => {
+                    player.totalPoints += finalScores[index].finalScore;
+                    player.rounds[editingRoundIndex] = finalScores[index];
+                });
+
+                showToast('編集を保存しました！');
+                editingRoundIndex = null;
+            } else {
+                // Adding new round
+                const roundData = {
+                    roundNumber: gameState.currentRound,
+                    scores: finalScores,
+                    tobiPlayer: tobiPlayerIndex !== null ? gameState.players[tobiPlayerIndex].name : null
+                };
+                gameState.rounds.push(roundData);
+
+                // Update player totals
+                gameState.players.forEach((player, index) => {
+                    player.rounds.push(finalScores[index]);
+                    player.totalPoints += finalScores[index].finalScore;
+                });
+
+                // Increment round
+                gameState.currentRound++;
+
+                showToast('スコアを保存しました！');
+            }
+
+            // Clear inputs
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`score${i}`).value = '';
+            }
+            document.getElementById('tobiSelection').style.display = 'none';
+
+            // Reset button text
+            const saveButton = document.querySelector('#gameContent .btn-success');
+            saveButton.innerHTML = '<span>✓</span><span>スコア確定</span>';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+
+            // Reset round number display if was editing
+            if (editingRoundIndex === null) {
+                document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
+            } else {
+                document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
+            }
+
+            saveGameState();
+            hideValidationError();
+            updateScoreboard();
+            
+            switchTab('scoreboard');
+        }
+
+        // Update Scoreboard
+        function updateScoreboard() {
+            const tbody = document.getElementById('scoreboardBody');
+            tbody.innerHTML = '';
+
+            if (gameState.rounds.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 40px; color: #94a3b8;">まだスコアがありません</td></tr>';
+                return;
+            }
+
+            // Sort players by total points
+            const sortedPlayers = [...gameState.players].sort((a, b) => b.totalPoints - a.totalPoints);
+
+            // Calculate total sum for debugging
+            let totalSum = 0;
+            
+            sortedPlayers.forEach((player, index) => {
+                const rank = index + 1;
+                const roundedScore = Math.round(player.totalPoints);
+                totalSum += roundedScore;
+                
+                // Show chip info if available
+                let chipInfo = '';
+                if (player.chips !== undefined && player.chipPoints !== undefined) {
+                    chipInfo = `<div style="font-size: 0.85em; color: #64748b;">チップ: ${player.chips}枚 (${player.chipPoints >= 0 ? '+' : ''}${Math.round(player.chipPoints)})</div>`;
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="rank rank-${rank}">${rank}</div>
+                    </td>
+                    <td class="player-name-cell">
+                        ${player.name}
+                        ${chipInfo}
+                    </td>
+                    <td class="score-cell" style="text-align: right;">
+                        <span class="${player.totalPoints >= 0 ? 'score-positive' : 'score-negative'}">
+                            ${player.totalPoints >= 0 ? '+' : ''}${roundedScore}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Add total row for debugging
+            const totalRow = document.createElement('tr');
+            totalRow.style.borderTop = '2px solid #000';
+            totalRow.style.fontWeight = 'bold';
+            totalRow.innerHTML = `
+                <td colspan="2" style="text-align: right; padding: 15px 12px;">合計</td>
+                <td style="text-align: right; padding: 15px 12px;">
+                    <span style="color: ${totalSum === 0 ? '#10b981' : '#ef4444'};">
+                        ${totalSum}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(totalRow);
+            
+            console.log('=== Scoreboard Debug ===');
+            console.log('Total rounds:', gameState.rounds.length);
+            gameState.players.forEach((player, idx) => {
+                console.log(`${player.name}: ${Math.round(player.totalPoints)} (raw: ${player.totalPoints})`);
+            });
+            console.log('Sum:', totalSum);
+        }
+
+        // Update History
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (gameState.rounds.length === 0) {
+                historyList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">まだ履歴がありません</div>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = '';
+
+            gameState.rounds.forEach((round, roundIndex) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                
+                let scoresHTML = '';
+                gameState.players.forEach((player, index) => {
+                    const score = round.scores[index];
+                    const scoreClass = score.finalScore >= 0 ? 'score-positive' : 'score-negative';
+                    
+                    let badges = '';
+                    if (score.tobiuma) {
+                        badges += ` <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">トビ+${score.tobiuma}</span>`;
+                    }
+                    if (score.tobiPenalty) {
+                        badges += ` <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">トビ${score.tobiPenalty}</span>`;
+                    }
+                    
+                    scoresHTML += `
+                        <div class="history-score-item">
+                            ${player.name}: <span class="${scoreClass}">${score.finalScore >= 0 ? '+' : ''}${Math.round(score.finalScore)}</span>${badges}
+                            <small style="color: #94a3b8; margin-left: 5px;">(${score.rawScore.toLocaleString()}点)</small>
+                        </div>
+                    `;
+                });
+
+                const tobiInfo = round.tobiPlayer ? `<div style="font-size: 0.85em; color: #f59e0b; margin-top: 8px;">🔥 トバした人: ${round.tobiPlayer}</div>` : '';
+
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="history-round">第${round.roundNumber}回戦</div>
+                        <button onclick="editRound(${roundIndex})" class="edit-round-btn" data-round-index="${roundIndex}" style="
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            padding: 6px 12px;
+                            border-radius: 6px;
+                            font-size: 0.85em;
+                            cursor: pointer;
+                            transition: all 0.3s;
+                            font-weight: 600;
+                        ">✏️ 編集</button>
+                    </div>
+                    <div class="history-scores">${scoresHTML}</div>
+                    ${tobiInfo}
+                `;
+                
+                historyList.appendChild(item);
+            });
+
+            // Add click event listeners to edit buttons
+            document.querySelectorAll('.edit-round-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const roundIndex = parseInt(this.dataset.roundIndex);
+                    editRound(roundIndex);
+                });
+                
+                btn.addEventListener('mouseover', function() {
+                    this.style.background = '#2563eb';
+                    this.style.transform = 'scale(1.05)';
+                });
+                
+                btn.addEventListener('mouseout', function() {
+                    this.style.background = '#3b82f6';
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        }
+
+        // Show Chip Input
+        function showChipInput() {
+            if (gameState.rounds.length === 0) {
+                if (confirm('ゲームを終了しますか？')) {
+                    endGame();
+                }
+                return;
+            }
+
+            // Setup chip inputs
+            const container = document.getElementById('chipInputs');
+            container.innerHTML = '';
+
+            gameState.players.forEach((player, index) => {
+                const chipCount = player.chips || 0;
+                const row = document.createElement('div');
+                row.className = 'player-input-group';
+                row.innerHTML = `
+                    <div class="player-number">${index + 1}</div>
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${player.name}</div>
+                        <input type="number" 
+                               class="input-field" 
+                               id="chip${index}" 
+                               placeholder="チップ数"
+                               value="${chipCount}"
+                               inputmode="numeric"
+                               style="margin: 0;">
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            // Display chip price
+            document.getElementById('chipPriceDisplay').textContent = gameState.settings.chipPrice;
+
+            // Hide validation error
+            document.getElementById('chipValidationError').classList.remove('show');
+
+            // Switch to chip tab
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
+            document.getElementById('chipContent').classList.add('active');
+
+            showToast('チップ数を入力してください');
+        }
+
+        // Apply Chips and Finish
+        function applyChipsAndFinish() {
+            const chipPrice = gameState.settings.chipPrice;
+            
+            // Get chip counts
+            const chips = [];
+            for (let i = 0; i < 4; i++) {
+                const chipInput = document.getElementById(`chip${i}`);
+                const chipCount = parseInt(chipInput.value) || 0;
+                chips.push(chipCount);
+            }
+
+            // Check if total chips is 0
+            const totalChips = chips.reduce((sum, c) => sum + c, 0);
+            
+            if (totalChips !== 0) {
+                showValidationError(`チップの合計が0になっていません（現在: ${totalChips > 0 ? '+' : ''}${totalChips}）`);
+                return;
+            }
+
+            // Apply chip points to player totals
+            gameState.players.forEach((player, index) => {
+                const chipPoints = chips[index] * chipPrice;
+                player.totalPoints += chipPoints;
+                player.chips = chips[index];
+                player.chipPoints = chipPoints;
+            });
+
+            console.log('=== Chip Calculation ===');
+            console.log('Total chips:', totalChips);
+            gameState.players.forEach((player, index) => {
+                console.log(`${player.name}: ${chips[index]} chips, ${player.chipPoints} points`);
+            });
+
+            saveGameState();
+            updateScoreboard();
+            hideValidationError();
+            
+            // Show final results
+            switchTab('scoreboard');
+            showToast('チップを反映しました！');
+            
+            // Show end game dialog after a short delay
+            setTimeout(() => {
+                if (confirm('ゲームを終了しますか？スコアボードを確認してから終了してください。')) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // Skip Chips and Finish
+        function skipChipsAndFinish() {
+            if (confirm('チップなしでゲームを終了しますか？')) {
+                endGame();
+            }
+        }
+
+        // End Game
+        function endGame() {
+            if (!confirm('ゲームを終了しますか？')) return;
+
+            gameState = {
+                players: [],
+                rounds: [],
+                currentRound: 0,
+                settings: {
+                    initialPoints: 25000,
+                    calculationBase: 30000,
+                    uma1: 25,
+                    uma2: 10,
+                    uma3: -10,
+                    uma4: -25,
+                    tobiuma: 10,
+                    chipPrice: 5
+                },
+                gameStarted: false
+            };
+
+            saveGameState();
+            switchTab('setup');
+            showToast('ゲームを終了しました');
+        }
+
+        // Validation Error Display
+        function showValidationError(message) {
+            const errorDiv = document.getElementById('validationError');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+            
+            // Also handle chip validation error
+            const chipErrorDiv = document.getElementById('chipValidationError');
+            if (chipErrorDiv) {
+                chipErrorDiv.textContent = message;
+                chipErrorDiv.classList.add('show');
+            }
+        }
+
+        function hideValidationError() {
+            const errorDiv = document.getElementById('validationError');
+            if (errorDiv) {
+                errorDiv.classList.remove('show');
+            }
+            
+            const chipErrorDiv = document.getElementById('chipValidationError');
+            if (chipErrorDiv) {
+                chipErrorDiv.classList.remove('show');
+            }
+        }
+
+        // Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Local Storage
+        function saveGameState() {
+            localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+        }
+
+        function loadGameState() {
+            const saved = localStorage.getItem('mahjongGameState');
+            if (saved) {
+                gameState = JSON.parse(saved);
+            }
+        }
+
+        function updateUI() {
+            if (gameState.gameStarted) {
+                setupScoreInputs();
+                updateScoreboard();
+                updateHistory();
+            }
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
