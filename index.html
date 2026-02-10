@@ -796,13 +796,13 @@
         // ============================================================
         
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",                                              // ← ここを置き換え
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",                       // ← ここを置き換え
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",  // ← ここを置き換え
-            projectId: "YOUR_PROJECT_ID",                                        // ← ここを置き換え
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",                        // ← ここを置き換え
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",                       // ← ここを置き換え
-            appId: "YOUR_APP_ID"                                                 // ← ここを置き換え
+            apiKey: "AIzaSyBGR8A7KclzE3Jy65hU-uPfl0SqTTRe0VY",
+            authDomain: "mahjong-calculator-bd572.firebaseapp.com",
+            databaseURL: "https://mahjong-calculator-bd572-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mahjong-calculator-bd572",
+            storageBucket: "mahjong-calculator-bd572.firebasestorage.app",
+            messagingSenderId: "848965949758",
+            appId: "1:848965949758:web:3f5a5c1279d2a03d9c346f"
         };
         
         // ============================================================
@@ -1112,14 +1112,14 @@
                         <button onclick="toggleMinus(${index})" 
                                 class="minus-btn" 
                                 id="minusBtn${index}"
-                                style="padding: 15px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px;">
+                                type="button"
+                                style="padding: 15px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px; transition: background 0.3s;">
                             ±
                         </button>
-                        <input type="number" 
+                        <input type="tel" 
                                class="score-input" 
                                id="score${index}" 
                                placeholder="点数"
-                               inputmode="decimal"
                                onchange="checkForNegativeScores()"
                                oninput="syncScoreInput(${index})"
                                style="flex: 1;">
