@@ -796,13 +796,13 @@
         // ============================================================
         
         const firebaseConfig = {
-            apiKey: "AIzaSyBGR8A7KclzE3Jy65hU-uPfl0SqTTRe0VY",
-            authDomain: "mahjong-calculator-bd572.firebaseapp.com",
-            databaseURL: "https://mahjong-calculator-bd572-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "mahjong-calculator-bd572",
-            storageBucket: "mahjong-calculator-bd572.firebasestorage.app",
-            messagingSenderId: "848965949758",
-            appId: "1:848965949758:web:3f5a5c1279d2a03d9c346f"
+            apiKey: "YOUR_API_KEY",                                              // ← ここを置き換え
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",                       // ← ここを置き換え
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",  // ← ここを置き換え
+            projectId: "YOUR_PROJECT_ID",                                        // ← ここを置き換え
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",                        // ← ここを置き換え
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",                       // ← ここを置き換え
+            appId: "YOUR_APP_ID"                                                 // ← ここを置き換え
         };
         
         // ============================================================
@@ -1108,14 +1108,22 @@
                 row.className = 'score-input-row';
                 row.innerHTML = `
                     <div class="player-name-display">${player.name}</div>
-                    <input type="text" 
-                           class="score-input" 
-                           id="score${index}" 
-                           placeholder="点数"
-                           pattern="-?[0-9]*"
-                           inputmode="numeric"
-                           onchange="checkForNegativeScores()"
-                           oninput="syncScoreInput(${index})">
+                    <div style="display: flex; gap: 8px; flex: 1;">
+                        <button onclick="toggleMinus(${index})" 
+                                class="minus-btn" 
+                                id="minusBtn${index}"
+                                style="padding: 15px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px;">
+                            ±
+                        </button>
+                        <input type="number" 
+                               class="score-input" 
+                               id="score${index}" 
+                               placeholder="点数"
+                               inputmode="decimal"
+                               onchange="checkForNegativeScores()"
+                               oninput="syncScoreInput(${index})"
+                               style="flex: 1;">
+                    </div>
                 `;
                 container.appendChild(row);
             });
@@ -1139,6 +1147,31 @@
                     }
                 });
             }
+        }
+
+        // Toggle minus sign
+        function toggleMinus(playerIndex) {
+            const input = document.getElementById(`score${playerIndex}`);
+            const btn = document.getElementById(`minusBtn${playerIndex}`);
+            let value = input.value.trim();
+            
+            if (value === '' || value === '0') {
+                // Do nothing if empty or zero
+                return;
+            }
+            
+            if (value.startsWith('-')) {
+                // Remove minus
+                input.value = value.substring(1);
+                btn.style.background = '#ef4444';
+            } else {
+                // Add minus
+                input.value = '-' + value;
+                btn.style.background = '#059669';
+            }
+            
+            syncScoreInput(playerIndex);
+            checkForNegativeScores();
         }
 
         // Sync score input to Firebase
