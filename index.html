@@ -757,10 +757,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <button class="btn btn-primary" onclick="switchTab('game')" style="margin-top: 20px;">
-                次の回戦へ
-            </button>
         </div>
 
         <!-- History Section -->
@@ -1202,6 +1198,28 @@
             
             syncScoreInput(playerIndex);
             checkForNegativeScores();
+        }
+
+        // Toggle minus sign for chip input
+        function toggleChipMinus(playerIndex) {
+            const input = document.getElementById(`chip${playerIndex}`);
+            const btn = document.getElementById(`chipMinusBtn${playerIndex}`);
+            let value = input.value.trim();
+            
+            if (value === '' || value === '0') {
+                // Do nothing if empty or zero
+                return;
+            }
+            
+            if (value.startsWith('-')) {
+                // Remove minus
+                input.value = value.substring(1);
+                btn.style.background = '#ef4444';
+            } else {
+                // Add minus
+                input.value = '-' + value;
+                btn.style.background = '#059669';
+            }
         }
 
         // Sync score input to Firebase
@@ -1747,17 +1765,28 @@
                 const chipCount = player.chips || 0;
                 const row = document.createElement('div');
                 row.className = 'player-input-group';
+                const isNegative = chipCount < 0;
+                const btnColor = isNegative ? '#059669' : '#ef4444';
+                
                 row.innerHTML = `
                     <div class="player-number">${index + 1}</div>
                     <div style="flex: 1; display: flex; flex-direction: column;">
                         <div style="font-weight: 600; margin-bottom: 5px;">${player.name}</div>
-                        <input type="number" 
-                               class="input-field" 
-                               id="chip${index}" 
-                               placeholder="チップ数"
-                               value="${chipCount}"
-                               inputmode="numeric"
-                               style="margin: 0;">
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="toggleChipMinus(${index})" 
+                                    class="minus-btn" 
+                                    id="chipMinusBtn${index}"
+                                    type="button"
+                                    style="padding: 15px 20px; background: ${btnColor}; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px; transition: background 0.3s;">
+                                ±
+                            </button>
+                            <input type="tel" 
+                                   class="input-field" 
+                                   id="chip${index}" 
+                                   placeholder="チップ数"
+                                   value="${chipCount}"
+                                   style="margin: 0; flex: 1;">
+                        </div>
                     </div>
                 `;
                 container.appendChild(row);
