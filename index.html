@@ -698,7 +698,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-success" onclick="saveRound()">
+            <button class="btn btn-success" onclick="saveRound()" id="saveRoundBtn">
                 <span>✓</span>
                 <span>スコア確定</span>
             </button>
@@ -1439,6 +1439,8 @@
 
         // Save Round
         function saveRound() {
+            console.log('=== saveRound called ===');
+            
             const scores = [];
             let hasNegative = false;
             
@@ -1447,7 +1449,10 @@
                 const scoreText = scoreInput.value.trim();
                 const score = parseInt(scoreText);
                 
+                console.log(`Player ${i+1}: input="${scoreText}", parsed=${score}`);
+                
                 if (isNaN(score) || scoreText === '') {
+                    console.log('ERROR: Missing or invalid score');
                     showValidationError('すべてのプレイヤーの点数を入力してください');
                     return;
                 }
@@ -1457,6 +1462,9 @@
                     hasNegative = true;
                 }
             }
+            
+            console.log('All scores:', scores);
+            console.log('Total:', scores.reduce((a, b) => a + b, 0));
 
             // Validate scores total (must be 100,000)
             const validation = validateScores(scores);
