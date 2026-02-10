@@ -1108,10 +1108,11 @@
                 row.className = 'score-input-row';
                 row.innerHTML = `
                     <div class="player-name-display">${player.name}</div>
-                    <input type="number" 
+                    <input type="text" 
                            class="score-input" 
                            id="score${index}" 
                            placeholder="点数"
+                           pattern="-?[0-9]*"
                            inputmode="numeric"
                            onchange="checkForNegativeScores()"
                            oninput="syncScoreInput(${index})">
@@ -1402,9 +1403,10 @@
             
             for (let i = 0; i < 4; i++) {
                 const scoreInput = document.getElementById(`score${i}`);
-                const score = parseInt(scoreInput.value);
+                const scoreText = scoreInput.value.trim();
+                const score = parseInt(scoreText);
                 
-                if (isNaN(score)) {
+                if (isNaN(score) || scoreText === '') {
                     showValidationError('すべてのプレイヤーの点数を入力してください');
                     return;
                 }
