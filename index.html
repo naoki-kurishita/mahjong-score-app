@@ -1505,6 +1505,10 @@
 
                 // Add new scores to player totals
                 gameState.players.forEach((player, index) => {
+                    // Ensure rounds array exists
+                    if (!player.rounds) {
+                        player.rounds = [];
+                    }
                     player.totalPoints += finalScores[index].finalScore;
                     player.rounds[editingRoundIndex] = finalScores[index];
                 });
@@ -1522,6 +1526,10 @@
 
                 // Update player totals
                 gameState.players.forEach((player, index) => {
+                    // Ensure rounds array exists
+                    if (!player.rounds) {
+                        player.rounds = [];
+                    }
                     player.rounds.push(finalScores[index]);
                     player.totalPoints += finalScores[index].finalScore;
                 });
@@ -1871,6 +1879,15 @@
             const saved = localStorage.getItem('mahjongGameState');
             if (saved) {
                 gameState = JSON.parse(saved);
+                
+                // Ensure all players have rounds array
+                if (gameState.players) {
+                    gameState.players.forEach(player => {
+                        if (!player.rounds) {
+                            player.rounds = [];
+                        }
+                    });
+                }
             }
         }
 
