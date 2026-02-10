@@ -8,6 +8,11 @@
     <meta name="apple-mobile-web-app-title" content="麻雀スコア">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
     <title>🀄 麻雀スコア計算機</title>
     <style>
         * {
@@ -532,10 +537,74 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('setup')">セットアップ</button>
+            <button class="nav-tab active" onclick="switchTab('room')">ルーム</button>
+            <button class="nav-tab" onclick="switchTab('setup')">セットアップ</button>
             <button class="nav-tab" onclick="switchTab('game')" id="gameTab">ゲーム</button>
             <button class="nav-tab" onclick="switchTab('scoreboard')">スコア</button>
             <button class="nav-tab" onclick="switchTab('history')">履歴</button>
+        </div>
+
+        <!-- Room Selection Section -->
+        <div id="roomContent" class="content active">
+            <div class="section-title">🔗 ゲームルーム</div>
+            
+            <div id="roomSelection" style="display: block;">
+                <div style="background: #dbeafe; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 1em; color: #1e40af; font-weight: 600; margin-bottom: 8px;">
+                        リアルタイム同期機能
+                    </div>
+                    <div style="font-size: 0.9em; color: #64748b; line-height: 1.6;">
+                        4人が同じルームに参加すると、誰かが点数を入力すると全員の画面に自動反映されます
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="createRoom()" style="margin-bottom: 15px;">
+                    <span>➕</span>
+                    <span>新しいゲームを作成</span>
+                </button>
+
+                <div style="text-align: center; margin: 20px 0; color: #94a3b8; font-size: 0.9em;">
+                    または
+                </div>
+
+                <div class="settings-group">
+                    <label class="settings-label">ルームコードを入力</label>
+                    <input type="text" class="settings-input" id="roomCodeInput" placeholder="例: A7B3" maxlength="4" style="text-transform: uppercase; text-align: center; font-size: 1.3em; font-weight: 700; letter-spacing: 0.1em;">
+                </div>
+
+                <button class="btn btn-success" onclick="joinRoom()">
+                    <span>🚪</span>
+                    <span>ルームに参加</span>
+                </button>
+
+                <div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 0.85em; color: #92400e;">
+                        💡 <strong>ヒント:</strong> ホストが作成したルームコードを他の3人に伝えて参加してもらいましょう
+                    </div>
+                </div>
+            </div>
+
+            <div id="roomInfo" style="display: none;">
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 0.9em; margin-bottom: 8px;">接続中のルーム</div>
+                    <div style="font-size: 2.5em; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 8px;" id="currentRoomCode"></div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">このコードを他のプレイヤーに共有</div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #475569;">参加者（<span id="participantCount">0</span>/4）</div>
+                    <div id="participantList"></div>
+                </div>
+
+                <button class="btn btn-primary" onclick="startGameFromRoom()">
+                    <span>🎮</span>
+                    <span>ゲーム開始</span>
+                </button>
+
+                <button class="btn btn-danger" onclick="leaveRoom()" style="margin-top: 10px;">
+                    ルームから退出
+                </button>
+            </div>
         </div>
 
         <!-- Setup Section -->
@@ -710,6 +779,54 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // ============================================================
+        // 🔥 Firebase設定 - ここを編集してください！
+        // ============================================================
+        // 
+        // 【手順】
+        // 1. Firebaseコンソール (https://console.firebase.google.com) を開く
+        // 2. プロジェクト設定 → マイアプリ → ウェブアプリの設定をコピー
+        // 3. 下の「YOUR_API_KEY」などの部分を実際の値に置き換える
+        // 
+        // 【例】
+        // apiKey: "AIzaSyABC123def456GHI789jkl012MNO345pqr",
+        // authDomain: "mahjong-12345.firebaseapp.com",
+        // など
+        //
+        // ============================================================
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGR8A7KclzE3Jy65hU-uPfl0SqTTRe0VY",                                          // ← ここを置き換え
+            authDomain: "mahjong-calculator-bd572.firebaseapp.com",           // ← ここを置き換え
+            databaseURL: "https://mahjong-calculator-bd572-default-rtdb.asia-southeast1.firebasedatabase.app", // ← ここを置き換え
+            projectId: "mahjong-calculator-bd572",                             // ← ここを置き換え
+            storageBucket: "mahjong-calculator-bd572.firebasestorage.app",              // ← ここを置き換え
+            messagingSenderId: "848965949758",           // ← ここを置き換え
+            appId: "1:848965949758:web:3f5a5c1279d2a03d9c346f"                                            // ← ここを置き換え
+        };
+        
+        // ============================================================
+        // ここまで編集
+        // ============================================================
+
+        // Initialize Firebase
+        let firebaseApp = null;
+        let database = null;
+        let currentRoomRef = null;
+        let currentRoomCode = null;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                console.log('Firebase initialized successfully');
+            } else {
+                console.warn('Firebase not configured. Using local mode only.');
+            }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+        }
+
         // Game State
         let gameState = {
             players: [],
@@ -727,6 +844,188 @@
             },
             gameStarted: false
         };
+
+        // Room Management Functions
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar looking characters
+            let code = '';
+            for (let i = 0; i < 4; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function createRoom() {
+            if (!database) {
+                alert('Firebase が設定されていません。ローカルモードで続行します。');
+                switchTab('setup');
+                return;
+            }
+
+            const roomCode = generateRoomCode();
+            const roomRef = database.ref('rooms/' + roomCode);
+
+            // Check if room already exists
+            roomRef.once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    // Room code already exists, try again
+                    createRoom();
+                } else {
+                    // Create new room
+                    const userName = prompt('あなたの名前を入力してください:', 'プレイヤー1') || 'プレイヤー1';
+                    
+                    roomRef.set({
+                        host: userName,
+                        created: Date.now(),
+                        participants: {
+                            [userName]: { joined: Date.now(), index: 0 }
+                        },
+                        gameState: null
+                    }).then(() => {
+                        joinRoomByCode(roomCode, userName);
+                    });
+                }
+            });
+        }
+
+        function joinRoom() {
+            if (!database) {
+                alert('Firebase が設定されていません。ローカルモードで続行します。');
+                switchTab('setup');
+                return;
+            }
+
+            const roomCode = document.getElementById('roomCodeInput').value.toUpperCase().trim();
+            
+            if (roomCode.length !== 4) {
+                alert('4桁のルームコードを入力してください');
+                return;
+            }
+
+            const userName = prompt('あなたの名前を入力してください:', 'プレイヤー') || 'プレイヤー';
+            joinRoomByCode(roomCode, userName);
+        }
+
+        function joinRoomByCode(roomCode, userName) {
+            const roomRef = database.ref('rooms/' + roomCode);
+
+            roomRef.once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    alert('ルームが見つかりません。コードを確認してください。');
+                    return;
+                }
+
+                const roomData = snapshot.val();
+                const participants = roomData.participants || {};
+                const participantCount = Object.keys(participants).length;
+
+                if (participantCount >= 4) {
+                    alert('このルームは満員です（4/4）');
+                    return;
+                }
+
+                // Add user to participants
+                roomRef.child('participants/' + userName).set({
+                    joined: Date.now(),
+                    index: participantCount
+                }).then(() => {
+                    currentRoomCode = roomCode;
+                    currentRoomRef = roomRef;
+                    
+                    // Listen to room updates
+                    setupRoomListeners();
+                    
+                    // Show room info
+                    document.getElementById('roomSelection').style.display = 'none';
+                    document.getElementById('roomInfo').style.display = 'block';
+                    document.getElementById('currentRoomCode').textContent = roomCode;
+                    
+                    showToast(`ルーム ${roomCode} に参加しました`);
+                });
+            });
+        }
+
+        function setupRoomListeners() {
+            if (!currentRoomRef) return;
+
+            // Listen to participants
+            currentRoomRef.child('participants').on('value', (snapshot) => {
+                const participants = snapshot.val() || {};
+                const participantNames = Object.keys(participants);
+                
+                document.getElementById('participantCount').textContent = participantNames.length;
+                
+                const listHTML = participantNames.map((name, index) => 
+                    `<div style="padding: 8px; background: white; border-radius: 6px; margin-bottom: 5px;">
+                        ${index + 1}. ${name}
+                    </div>`
+                ).join('');
+                
+                document.getElementById('participantList').innerHTML = listHTML;
+            });
+
+            // Listen to game state updates
+            currentRoomRef.child('gameState').on('value', (snapshot) => {
+                const roomGameState = snapshot.val();
+                if (roomGameState && roomGameState !== gameState) {
+                    // Update local game state from room
+                    Object.assign(gameState, roomGameState);
+                    updateUI();
+                    updateScoreboard();
+                    updateHistory();
+                }
+            });
+        }
+
+        function leaveRoom() {
+            if (!currentRoomRef || !confirm('ルームから退出しますか？')) return;
+
+            // Remove listeners
+            currentRoomRef.off();
+            
+            currentRoomRef = null;
+            currentRoomCode = null;
+            
+            document.getElementById('roomSelection').style.display = 'block';
+            document.getElementById('roomInfo').style.display = 'none';
+            document.getElementById('roomCodeInput').value = '';
+            
+            showToast('ルームから退出しました');
+        }
+
+        function startGameFromRoom() {
+            currentRoomRef.child('participants').once('value').then((snapshot) => {
+                const participants = snapshot.val() || {};
+                const participantNames = Object.keys(participants);
+                
+                if (participantNames.length < 2) {
+                    alert('最低2人のプレイヤーが必要です');
+                    return;
+                }
+
+                // Auto-fill player names from participants
+                participantNames.forEach((name, index) => {
+                    if (index < 4) {
+                        document.getElementById(`player${index + 1}`).value = name;
+                    }
+                });
+
+                // Fill remaining slots if less than 4
+                for (let i = participantNames.length; i < 4; i++) {
+                    document.getElementById(`player${i + 1}`).value = `プレイヤー${i + 1}`;
+                }
+
+                switchTab('setup');
+                showToast('プレイヤー名を確認してゲームを開始してください');
+            });
+        }
+
+        // Sync game state to Firebase
+        function syncGameState() {
+            if (currentRoomRef && gameState.gameStarted) {
+                currentRoomRef.child('gameState').set(gameState);
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1492,6 +1791,7 @@
         // Local Storage
         function saveGameState() {
             localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+            syncGameState(); // Sync to Firebase when saving locally
         }
 
         function loadGameState() {
