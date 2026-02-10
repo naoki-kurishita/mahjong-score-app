@@ -643,17 +643,17 @@
 
             <div class="settings-group">
                 <label class="settings-label">ウマ（1位 / 4位は自動で反対の値）</label>
-                <input type="number" class="settings-input" id="uma1" value="25" oninput="updateUmaDisplay()">
+                <input type="number" class="settings-input" id="uma1" value="25" oninput="updateUmaDisplay(); syncSettingsInput('uma1')">
             </div>
 
             <div class="settings-group">
                 <label class="settings-label">ウマ（2位 / 3位は自動で反対の値）</label>
-                <input type="number" class="settings-input" id="uma2" value="10" oninput="updateUmaDisplay()">
+                <input type="number" class="settings-input" id="uma2" value="10" oninput="updateUmaDisplay(); syncSettingsInput('uma2')">
             </div>
 
             <div class="settings-group">
                 <label class="settings-label">トビウマ</label>
-                <input type="number" class="settings-input" id="tobiuma" value="10">
+                <input type="number" class="settings-input" id="tobiuma" value="10" oninput="syncSettingsInput('tobiuma')">
                 <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
                     ※ マイナス点が出た場合、トバした人に加算されます
                 </div>
@@ -661,7 +661,7 @@
 
             <div class="settings-group">
                 <label class="settings-label">チップ単価</label>
-                <input type="number" class="settings-input" id="chipPrice" value="5">
+                <input type="number" class="settings-input" id="chipPrice" value="2" oninput="syncSettingsInput('chipPrice')">
                 <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
                     ※ チップ1枚あたりのポイント
                 </div>
@@ -840,7 +840,7 @@
                 uma3: -10,
                 uma4: -25,
                 tobiuma: 10,
-                chipPrice: 5
+                chipPrice: 2
             },
             gameStarted: false
         };
@@ -975,6 +975,9 @@
                     updateHistory();
                 }
             });
+            
+            // Setup listener for settings inputs (uma, tobiuma, chipPrice)
+            setupSettingsListeners();
         }
 
         function leaveRoom() {
@@ -991,6 +994,33 @@
             document.getElementById('roomCodeInput').value = '';
             
             showToast('ルームから退出しました');
+        }
+
+        // Sync settings input to Firebase
+        function syncSettingsInput(fieldId) {
+            const input = document.getElementById(fieldId);
+            const value = input.value;
+            
+            if (currentRoomRef) {
+                currentRoomRef.child(`settingsInputs/${fieldId}`).set(value || null);
+            }
+        }
+
+        // Setup listener for settings inputs
+        function setupSettingsListeners() {
+            if (!currentRoomRef) return;
+            
+            currentRoomRef.child('settingsInputs').on('value', (snapshot) => {
+                const inputs = snapshot.val();
+                if (inputs) {
+                    ['uma1', 'uma2', 'tobiuma', 'chipPrice'].forEach(fieldId => {
+                        const input = document.getElementById(fieldId);
+                        if (input && document.activeElement !== input && inputs[fieldId] !== undefined) {
+                            input.value = inputs[fieldId] || '';
+                        }
+                    });
+                }
+            });
         }
 
         function startGameFromRoom() {
@@ -1080,7 +1110,7 @@
             gameState.settings.uma3 = -gameState.settings.uma2;  // 3rd place is negative of 2nd
             gameState.settings.uma4 = -gameState.settings.uma1;  // 4th place is negative of 1st
             gameState.settings.tobiuma = parseInt(document.getElementById('tobiuma').value) || 10;
-            gameState.settings.chipPrice = parseInt(document.getElementById('chipPrice').value) || 5;
+            gameState.settings.chipPrice = parseInt(document.getElementById('chipPrice').value) || 2;
             
             gameState.currentRound = 1;
             gameState.gameStarted = true;
@@ -1820,7 +1850,7 @@
                     uma3: -10,
                     uma4: -25,
                     tobiuma: 10,
-                    chipPrice: 5
+                    chipPrice: 2
                 },
                 gameStarted: false
             };
