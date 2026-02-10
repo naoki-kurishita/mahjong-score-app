@@ -796,13 +796,13 @@
         // ============================================================
         
         const firebaseConfig = {
-            apiKey: "AIzaSyBGR8A7KclzE3Jy65hU-uPfl0SqTTRe0VY",                                          // ← ここを置き換え
-            authDomain: "mahjong-calculator-bd572.firebaseapp.com",           // ← ここを置き換え
-            databaseURL: "https://mahjong-calculator-bd572-default-rtdb.asia-southeast1.firebasedatabase.app", // ← ここを置き換え
-            projectId: "mahjong-calculator-bd572",                             // ← ここを置き換え
-            storageBucket: "mahjong-calculator-bd572.firebasestorage.app",              // ← ここを置き換え
-            messagingSenderId: "848965949758",           // ← ここを置き換え
-            appId: "1:848965949758:web:3f5a5c1279d2a03d9c346f"                                            // ← ここを置き換え
+            apiKey: "YOUR_API_KEY",                                              // ← ここを置き換え
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",                       // ← ここを置き換え
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",  // ← ここを置き換え
+            projectId: "YOUR_PROJECT_ID",                                        // ← ここを置き換え
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",                        // ← ここを置き換え
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",                       // ← ここを置き換え
+            appId: "YOUR_APP_ID"                                                 // ← ここを置き換え
         };
         
         // ============================================================
@@ -1113,13 +1113,48 @@
                            id="score${index}" 
                            placeholder="点数"
                            inputmode="numeric"
-                           onchange="checkForNegativeScores()">
+                           onchange="checkForNegativeScores()"
+                           oninput="syncScoreInput(${index})">
                 `;
                 container.appendChild(row);
             });
 
             document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Listen for score input updates from other players
+            if (currentRoomRef) {
+                currentRoomRef.child('currentInputs').on('value', (snapshot) => {
+                    const inputs = snapshot.val();
+                    if (inputs) {
+                        Object.keys(inputs).forEach(playerIndex => {
+                            const input = document.getElementById(`score${playerIndex}`);
+                            if (input && document.activeElement !== input) {
+                                // Only update if this input is not currently focused
+                                input.value = inputs[playerIndex] || '';
+                            }
+                        });
+                        checkForNegativeScores();
+                    }
+                });
+            }
+        }
+
+        // Sync score input to Firebase
+        function syncScoreInput(playerIndex) {
+            const input = document.getElementById(`score${playerIndex}`);
+            const value = input.value;
+            
+            if (currentRoomRef) {
+                currentRoomRef.child(`currentInputs/${playerIndex}`).set(value || null);
+            }
+        }
+
+        // Clear current inputs when saving round
+        function clearCurrentInputs() {
+            if (currentRoomRef) {
+                currentRoomRef.child('currentInputs').remove();
+            }
         }
 
         // Check for negative scores
@@ -1345,6 +1380,9 @@
                 document.getElementById(`score${i}`).value = '';
             }
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Clear Firebase current inputs
+            clearCurrentInputs();
 
             // Reset button text and hide cancel button
             const saveButton = document.querySelector('#gameContent .btn-success');
@@ -1448,6 +1486,9 @@
                 document.getElementById(`score${i}`).value = '';
             }
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Clear Firebase current inputs
+            clearCurrentInputs();
 
             // Reset button text
             const saveButton = document.querySelector('#gameContent .btn-success');
@@ -1481,13 +1522,9 @@
             // Sort players by total points
             const sortedPlayers = [...gameState.players].sort((a, b) => b.totalPoints - a.totalPoints);
 
-            // Calculate total sum for debugging
-            let totalSum = 0;
-            
             sortedPlayers.forEach((player, index) => {
                 const rank = index + 1;
                 const roundedScore = Math.round(player.totalPoints);
-                totalSum += roundedScore;
                 
                 // Show chip info if available
                 let chipInfo = '';
@@ -1512,27 +1549,12 @@
                 `;
                 tbody.appendChild(row);
             });
-
-            // Add total row for debugging
-            const totalRow = document.createElement('tr');
-            totalRow.style.borderTop = '2px solid #000';
-            totalRow.style.fontWeight = 'bold';
-            totalRow.innerHTML = `
-                <td colspan="2" style="text-align: right; padding: 15px 12px;">合計</td>
-                <td style="text-align: right; padding: 15px 12px;">
-                    <span style="color: ${totalSum === 0 ? '#10b981' : '#ef4444'};">
-                        ${totalSum}
-                    </span>
-                </td>
-            `;
-            tbody.appendChild(totalRow);
             
             console.log('=== Scoreboard Debug ===');
             console.log('Total rounds:', gameState.rounds.length);
             gameState.players.forEach((player, idx) => {
                 console.log(`${player.name}: ${Math.round(player.totalPoints)} (raw: ${player.totalPoints})`);
             });
-            console.log('Sum:', totalSum);
         }
 
         // Update History
