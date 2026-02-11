@@ -2001,8 +2001,22 @@
             switchTab('scoreboard');
             showToast('チップを反映しました！');
             
-            // Don't show popup - just let user view the scoreboard
-            // User can manually end game from setup tab if needed
+            // Notify all players that game has ended
+            if (currentRoomRef) {
+                console.log('📡 Notifying game end from applyChipsAndFinish');
+                currentRoomRef.child('gameEnded').set(true)
+                    .then(() => {
+                        console.log('✅ gameEnded set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameEnded:', error);
+                    });
+                    
+                // Reset the flag after a moment
+                setTimeout(() => {
+                    currentRoomRef.child('gameEnded').set(false);
+                }, 500);
+            }
         }
 
         // Skip Chips and Finish
@@ -2017,6 +2031,8 @@
 
         // End Game
         function endGame() {
+            console.log('🔴 === endGame function called ===');
+            
             gameState = {
                 players: [],
                 rounds: [],
