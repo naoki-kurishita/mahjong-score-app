@@ -679,6 +679,12 @@
                 <div class="round-number" id="roundNumber">第1回戦</div>
             </div>
 
+            <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 0.9em; color: #1e40af;">
+                    💡 <strong style="background: #ef4444; color: white; padding: 4px 10px; border-radius: 4px;">±</strong>ボタン：マイナス点の時に数字を入力してからタップしてください
+                </div>
+            </div>
+
             <div class="validation-error" id="validationError"></div>
 
             <div class="score-inputs" id="scoreInputs">
@@ -742,7 +748,12 @@
         <!-- Scoreboard Section -->
         <div id="scoreboardContent" class="content">
             <div class="scoreboard">
-                <div class="scoreboard-header">現在のスコア</div>
+                <div class="scoreboard-header">
+                    現在のスコア
+                    <div id="scoreboardRoundInfo" style="font-size: 0.9em; color: white; font-weight: 500; margin-top: 5px;">
+                        <!-- Round info will be displayed here -->
+                    </div>
+                </div>
                 <table class="scoreboard-table">
                     <thead>
                         <tr>
@@ -1767,6 +1778,17 @@
         function updateScoreboard() {
             const tbody = document.getElementById('scoreboardBody');
             tbody.innerHTML = '';
+            
+            // Update round info
+            const roundInfo = document.getElementById('scoreboardRoundInfo');
+            if (roundInfo) {
+                const totalRounds = gameState.rounds.length;
+                if (totalRounds > 0) {
+                    roundInfo.textContent = `（全${totalRounds}回戦）`;
+                } else {
+                    roundInfo.textContent = '';
+                }
+            }
 
             if (gameState.rounds.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 40px; color: #94a3b8;">まだスコアがありません</td></tr>';
