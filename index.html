@@ -1975,21 +1975,12 @@
             document.getElementById('nextRoundBtn').style.display = 'none';
             document.getElementById('endGameBtn').style.display = 'none';
             
-            if (confirm('チップなしでゲームを終了しますか？')) {
-                endGame();
-            } else {
-                // User cancelled - show buttons again
-                if (gameState.gameStarted) {
-                    document.getElementById('nextRoundBtn').style.display = 'block';
-                    document.getElementById('endGameBtn').style.display = 'block';
-                }
-            }
+            // End game without confirmation
+            endGame();
         }
 
         // End Game
         function endGame() {
-            if (!confirm('ゲームを終了しますか？')) return;
-
             gameState = {
                 players: [],
                 rounds: [],
