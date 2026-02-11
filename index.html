@@ -985,10 +985,16 @@
 
             // Listen to game state updates
             currentRoomRef.child('gameState').on('value', (snapshot) => {
+                console.log('=== gameState listener triggered ===');
                 const roomGameState = snapshot.val();
+                console.log('Received gameState from Firebase:', roomGameState);
+                
                 if (roomGameState) {
                     const wasNotStarted = !gameState.gameStarted;
                     const nowStarted = roomGameState.gameStarted;
+                    
+                    console.log('wasNotStarted:', wasNotStarted);
+                    console.log('nowStarted:', nowStarted);
                     
                     // Update local game state from room
                     Object.assign(gameState, roomGameState);
@@ -998,6 +1004,8 @@
                     
                     // If game just started, switch to game tab
                     if (wasNotStarted && nowStarted) {
+                        console.log('🎮 Game just started! Switching to game tab...');
+                        
                         // Enable game tab
                         document.getElementById('gameTab').style.pointerEvents = 'auto';
                         document.getElementById('gameTab').style.opacity = '1';
@@ -1005,7 +1013,11 @@
                         // Switch to game tab
                         switchTab('game');
                         showToast('ゲームが開始されました！');
+                    } else {
+                        console.log('Not switching tabs. wasNotStarted:', wasNotStarted, 'nowStarted:', nowStarted);
                     }
+                } else {
+                    console.log('No gameState received from Firebase');
                 }
             });
             
@@ -1085,11 +1097,30 @@
 
         // Sync game state to Firebase
         function syncGameState() {
+            console.log('=== syncGameState called ===');
+            console.log('currentRoomRef exists:', !!currentRoomRef);
+            console.log('gameState.gameStarted:', gameState.gameStarted);
+            
             if (currentRoomRef && gameState.gameStarted) {
-                currentRoomRef.child('gameState').set(gameState);
+                console.log('Syncing game state to Firebase...');
+                currentRoomRef.child('gameState').set(gameState)
+                    .then(() => {
+                        console.log('✅ Game state synced successfully');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to sync game state:', error);
+                    });
                 
                 // Notify that game has started
-                currentRoomRef.child('gameStarted').set(true);
+                currentRoomRef.child('gameStarted').set(true)
+                    .then(() => {
+                        console.log('✅ gameStarted flag set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameStarted flag:', error);
+                    });
+            } else {
+                console.warn('⚠️ Not syncing: currentRoomRef or gameStarted is false');
             }
         }
 
@@ -1139,6 +1170,9 @@
 
         // Start Game
         function startGame() {
+            console.log('=== startGame called ===');
+            console.log('currentRoomRef:', currentRoomRef);
+            
             const player1 = document.getElementById('player1').value.trim() || 'プレイヤー1';
             const player2 = document.getElementById('player2').value.trim() || 'プレイヤー2';
             const player3 = document.getElementById('player3').value.trim() || 'プレイヤー3';
@@ -1164,6 +1198,7 @@
             gameState.gameStarted = true;
             gameState.rounds = [];
 
+            console.log('Game state before save:', gameState);
             saveGameState();
             setupScoreInputs();
             
