@@ -987,11 +987,25 @@
             currentRoomRef.child('gameState').on('value', (snapshot) => {
                 const roomGameState = snapshot.val();
                 if (roomGameState && roomGameState !== gameState) {
+                    const wasNotStarted = !gameState.gameStarted;
+                    const nowStarted = roomGameState.gameStarted;
+                    
                     // Update local game state from room
                     Object.assign(gameState, roomGameState);
                     updateUI();
                     updateScoreboard();
                     updateHistory();
+                    
+                    // If game just started, switch to game tab
+                    if (wasNotStarted && nowStarted) {
+                        // Enable game tab
+                        document.getElementById('gameTab').style.pointerEvents = 'auto';
+                        document.getElementById('gameTab').style.opacity = '1';
+                        
+                        // Switch to game tab
+                        switchTab('game');
+                        showToast('ゲームが開始されました！');
+                    }
                 }
             });
             
