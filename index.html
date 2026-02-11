@@ -953,6 +953,9 @@
                         gameStarted: false
                     };
                     
+                    // Save the reset state to localStorage
+                    localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+                    
                     // Listen to room updates
                     setupRoomListeners();
                     
