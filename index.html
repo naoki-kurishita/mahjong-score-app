@@ -1066,9 +1066,20 @@
                     return;
                 }
 
-                // Names are already filled by setupRoomListeners
-                switchTab('setup');
-                showToast('プレイヤー名を確認してゲームを開始してください');
+                // Check if player names are filled in setup
+                const player1 = document.getElementById('player1').value.trim();
+                const player2 = document.getElementById('player2').value.trim();
+                const player3 = document.getElementById('player3').value.trim();
+                const player4 = document.getElementById('player4').value.trim();
+                
+                if (!player1 || !player2) {
+                    alert('プレイヤー名が設定されていません。セットアップ画面を確認してください。');
+                    switchTab('setup');
+                    return;
+                }
+                
+                // Start the game directly
+                startGame();
             });
         }
 
