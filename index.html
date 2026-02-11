@@ -1965,16 +1965,8 @@
             switchTab('scoreboard');
             showToast('チップを反映しました！');
             
-            // Show end game dialog after a short delay
-            setTimeout(() => {
-                if (confirm('ゲームを終了しますか？スコアボードを確認してから終了してください。')) {
-                    endGame();
-                } else {
-                    // User cancelled ending - this means they want to continue
-                    // But chips are already applied, so we shouldn't allow more rounds
-                    // Keep button hidden
-                }
-            }, 1000);
+            // Don't show popup - just let user view the scoreboard
+            // User can manually end game from setup tab if needed
         }
 
         // Skip Chips and Finish
