@@ -986,7 +986,7 @@
             // Listen to game state updates
             currentRoomRef.child('gameState').on('value', (snapshot) => {
                 const roomGameState = snapshot.val();
-                if (roomGameState && roomGameState !== gameState) {
+                if (roomGameState) {
                     const wasNotStarted = !gameState.gameStarted;
                     const nowStarted = roomGameState.gameStarted;
                     
@@ -1076,6 +1076,9 @@
         function syncGameState() {
             if (currentRoomRef && gameState.gameStarted) {
                 currentRoomRef.child('gameState').set(gameState);
+                
+                // Notify that game has started
+                currentRoomRef.child('gameStarted').set(true);
             }
         }
 
