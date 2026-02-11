@@ -707,10 +707,9 @@
                 編集をキャンセル
             </button>
 
-            <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="switchTab('scoreboard')">スコアボード</button>
-                <button class="btn btn-danger" onclick="showChipInput()">ゲーム終了</button>
-            </div>
+            <button class="btn btn-secondary" onclick="switchTab('scoreboard')" style="margin-top: 20px;">
+                スコアボード
+            </button>
         </div>
 
         <!-- Chip Input Section -->
@@ -760,6 +759,10 @@
 
             <button class="btn btn-primary" id="nextRoundBtn" onclick="switchTab('game')" style="margin-top: 20px;">
                 次の回戦へ
+            </button>
+
+            <button class="btn btn-danger" id="endGameBtn" onclick="showChipInput()" style="margin-top: 10px;">
+                ゲーム終了
             </button>
         </div>
 
@@ -1126,6 +1129,9 @@
             
             // Show next round button
             document.getElementById('nextRoundBtn').style.display = 'block';
+            
+            // Show end game button
+            document.getElementById('endGameBtn').style.display = 'block';
             
             // Enable game tab
             document.getElementById('gameTab').style.pointerEvents = 'auto';
@@ -1859,6 +1865,9 @@
             // Hide next round button since game is ending
             document.getElementById('nextRoundBtn').style.display = 'none';
             
+            // Hide end game button since game is ending
+            document.getElementById('endGameBtn').style.display = 'none';
+            
             // Show final results
             switchTab('scoreboard');
             showToast('チップを反映しました！');
@@ -1877,15 +1886,17 @@
 
         // Skip Chips and Finish
         function skipChipsAndFinish() {
-            // Hide next round button since game is ending
+            // Hide buttons since game is ending
             document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('endGameBtn').style.display = 'none';
             
             if (confirm('チップなしでゲームを終了しますか？')) {
                 endGame();
             } else {
-                // User cancelled - show button again
+                // User cancelled - show buttons again
                 if (gameState.gameStarted) {
                     document.getElementById('nextRoundBtn').style.display = 'block';
+                    document.getElementById('endGameBtn').style.display = 'block';
                 }
             }
         }
@@ -1917,6 +1928,12 @@
             const nextRoundBtn = document.getElementById('nextRoundBtn');
             if (nextRoundBtn) {
                 nextRoundBtn.style.display = 'none';
+            }
+            
+            // Hide end game button
+            const endGameBtn = document.getElementById('endGameBtn');
+            if (endGameBtn) {
+                endGameBtn.style.display = 'none';
             }
             
             switchTab('setup');
@@ -1995,11 +2012,22 @@
                 if (nextRoundBtn) {
                     nextRoundBtn.style.display = 'block';
                 }
+                
+                // Show end game button when game is active
+                const endGameBtn = document.getElementById('endGameBtn');
+                if (endGameBtn) {
+                    endGameBtn.style.display = 'block';
+                }
             } else {
-                // Hide next round button when game is not started
+                // Hide buttons when game is not started
                 const nextRoundBtn = document.getElementById('nextRoundBtn');
                 if (nextRoundBtn) {
                     nextRoundBtn.style.display = 'none';
+                }
+                
+                const endGameBtn = document.getElementById('endGameBtn');
+                if (endGameBtn) {
+                    endGameBtn.style.display = 'none';
                 }
             }
         }
