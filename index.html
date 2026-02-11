@@ -614,19 +614,19 @@
                 <div class="player-inputs">
                     <div class="player-input-group">
                         <div class="player-number">1</div>
-                        <input type="text" class="input-field" id="player1" placeholder="プレイヤー1" value="サトウ">
+                        <input type="text" class="input-field" id="player1" placeholder="プレイヤー1" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">2</div>
-                        <input type="text" class="input-field" id="player2" placeholder="プレイヤー2" value="ミヤオ">
+                        <input type="text" class="input-field" id="player2" placeholder="プレイヤー2" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">3</div>
-                        <input type="text" class="input-field" id="player3" placeholder="プレイヤー3" value="ウシジマ">
+                        <input type="text" class="input-field" id="player3" placeholder="プレイヤー3" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">4</div>
-                        <input type="text" class="input-field" id="player4" placeholder="プレイヤー4" value="クリシタ">
+                        <input type="text" class="input-field" id="player4" placeholder="プレイヤー4" value="">
                     </div>
                 </div>
             </div>
@@ -757,6 +757,10 @@
                     </tbody>
                 </table>
             </div>
+
+            <button class="btn btn-primary" id="nextRoundBtn" onclick="switchTab('game')" style="margin-top: 20px;">
+                次の回戦へ
+            </button>
         </div>
 
         <!-- History Section -->
@@ -958,6 +962,22 @@
                 ).join('');
                 
                 document.getElementById('participantList').innerHTML = listHTML;
+                
+                // Auto-fill player names in setup based on join order
+                const sortedParticipants = participantNames.map(name => ({
+                    name: name,
+                    index: participants[name].index,
+                    joined: participants[name].joined
+                })).sort((a, b) => a.joined - b.joined);
+                
+                sortedParticipants.forEach((participant, index) => {
+                    if (index < 4) {
+                        const playerInput = document.getElementById(`player${index + 1}`);
+                        if (playerInput) {
+                            playerInput.value = participant.name;
+                        }
+                    }
+                });
             });
 
             // Listen to game state updates
@@ -1029,18 +1049,7 @@
                     return;
                 }
 
-                // Auto-fill player names from participants
-                participantNames.forEach((name, index) => {
-                    if (index < 4) {
-                        document.getElementById(`player${index + 1}`).value = name;
-                    }
-                });
-
-                // Fill remaining slots if less than 4
-                for (let i = participantNames.length; i < 4; i++) {
-                    document.getElementById(`player${i + 1}`).value = `プレイヤー${i + 1}`;
-                }
-
+                // Names are already filled by setupRoomListeners
                 switchTab('setup');
                 showToast('プレイヤー名を確認してゲームを開始してください');
             });
@@ -1114,6 +1123,9 @@
 
             saveGameState();
             setupScoreInputs();
+            
+            // Show next round button
+            document.getElementById('nextRoundBtn').style.display = 'block';
             
             // Enable game tab
             document.getElementById('gameTab').style.pointerEvents = 'auto';
@@ -1844,6 +1856,9 @@
             updateScoreboard();
             hideValidationError();
             
+            // Hide next round button since game is ending
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            
             // Show final results
             switchTab('scoreboard');
             showToast('チップを反映しました！');
@@ -1852,14 +1867,26 @@
             setTimeout(() => {
                 if (confirm('ゲームを終了しますか？スコアボードを確認してから終了してください。')) {
                     endGame();
+                } else {
+                    // User cancelled ending - this means they want to continue
+                    // But chips are already applied, so we shouldn't allow more rounds
+                    // Keep button hidden
                 }
             }, 1000);
         }
 
         // Skip Chips and Finish
         function skipChipsAndFinish() {
+            // Hide next round button since game is ending
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            
             if (confirm('チップなしでゲームを終了しますか？')) {
                 endGame();
+            } else {
+                // User cancelled - show button again
+                if (gameState.gameStarted) {
+                    document.getElementById('nextRoundBtn').style.display = 'block';
+                }
             }
         }
 
@@ -1885,6 +1912,13 @@
             };
 
             saveGameState();
+            
+            // Hide next round button
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+            if (nextRoundBtn) {
+                nextRoundBtn.style.display = 'none';
+            }
+            
             switchTab('setup');
             showToast('ゲームを終了しました');
         }
@@ -1955,6 +1989,18 @@
                 setupScoreInputs();
                 updateScoreboard();
                 updateHistory();
+                
+                // Show next round button when game is active
+                const nextRoundBtn = document.getElementById('nextRoundBtn');
+                if (nextRoundBtn) {
+                    nextRoundBtn.style.display = 'block';
+                }
+            } else {
+                // Hide next round button when game is not started
+                const nextRoundBtn = document.getElementById('nextRoundBtn');
+                if (nextRoundBtn) {
+                    nextRoundBtn.style.display = 'none';
+                }
             }
         }
 
