@@ -1041,21 +1041,34 @@
             
             // Listen for game end event
             currentRoomRef.child('gameEnded').on('value', (snapshot) => {
+                console.log('=== gameEnded listener triggered ===');
                 const gameEnded = snapshot.val();
+                console.log('gameEnded value:', gameEnded);
+                
                 if (gameEnded) {
                     console.log('🏁 Game ended - hiding buttons');
                     
                     // Hide next round button
                     const nextRoundBtn = document.getElementById('nextRoundBtn');
+                    console.log('nextRoundBtn element:', nextRoundBtn);
                     if (nextRoundBtn) {
                         nextRoundBtn.style.display = 'none';
+                        console.log('✅ nextRoundBtn hidden');
+                    } else {
+                        console.warn('⚠️ nextRoundBtn not found');
                     }
                     
                     // Hide end game button
                     const endGameBtn = document.getElementById('endGameBtn');
+                    console.log('endGameBtn element:', endGameBtn);
                     if (endGameBtn) {
                         endGameBtn.style.display = 'none';
+                        console.log('✅ endGameBtn hidden');
+                    } else {
+                        console.warn('⚠️ endGameBtn not found');
                     }
+                } else {
+                    console.log('gameEnded is false or null, not hiding buttons');
                 }
             });
             
@@ -2021,12 +2034,32 @@
             saveGameState();
             
             // Notify all players that game has ended
+            console.log('=== Notifying game end ===');
+            console.log('currentRoomRef exists:', !!currentRoomRef);
+            
             if (currentRoomRef) {
-                currentRoomRef.child('gameEnded').set(true);
+                console.log('Setting gameEnded to true...');
+                currentRoomRef.child('gameEnded').set(true)
+                    .then(() => {
+                        console.log('✅ gameEnded set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameEnded:', error);
+                    });
+                    
                 // Reset the flag after a moment
                 setTimeout(() => {
-                    currentRoomRef.child('gameEnded').set(false);
+                    console.log('Resetting gameEnded to false...');
+                    currentRoomRef.child('gameEnded').set(false)
+                        .then(() => {
+                            console.log('✅ gameEnded reset to false');
+                        })
+                        .catch((error) => {
+                            console.error('❌ Failed to reset gameEnded:', error);
+                        });
                 }, 500);
+            } else {
+                console.warn('⚠️ currentRoomRef is null, not syncing');
             }
             
             // Hide next round button
