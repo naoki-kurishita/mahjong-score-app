@@ -1039,6 +1039,26 @@
                 }
             });
             
+            // Listen for game end event
+            currentRoomRef.child('gameEnded').on('value', (snapshot) => {
+                const gameEnded = snapshot.val();
+                if (gameEnded) {
+                    console.log('🏁 Game ended - hiding buttons');
+                    
+                    // Hide next round button
+                    const nextRoundBtn = document.getElementById('nextRoundBtn');
+                    if (nextRoundBtn) {
+                        nextRoundBtn.style.display = 'none';
+                    }
+                    
+                    // Hide end game button
+                    const endGameBtn = document.getElementById('endGameBtn');
+                    if (endGameBtn) {
+                        endGameBtn.style.display = 'none';
+                    }
+                }
+            });
+            
             // Setup listener for settings inputs (uma, tobiuma, chipPrice)
             setupSettingsListeners();
         }
@@ -1999,6 +2019,15 @@
             };
 
             saveGameState();
+            
+            // Notify all players that game has ended
+            if (currentRoomRef) {
+                currentRoomRef.child('gameEnded').set(true);
+                // Reset the flag after a moment
+                setTimeout(() => {
+                    currentRoomRef.child('gameEnded').set(false);
+                }, 500);
+            }
             
             // Hide next round button
             const nextRoundBtn = document.getElementById('nextRoundBtn');
