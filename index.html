@@ -935,6 +935,24 @@
                     currentRoomCode = roomCode;
                     currentRoomRef = roomRef;
                     
+                    // Reset local game state when joining a room
+                    gameState = {
+                        players: [],
+                        rounds: [],
+                        currentRound: 0,
+                        settings: {
+                            initialPoints: 25000,
+                            calculationBase: 30000,
+                            uma1: 25,
+                            uma2: 10,
+                            uma3: -10,
+                            uma4: -25,
+                            tobiuma: 10,
+                            chipPrice: 2
+                        },
+                        gameStarted: false
+                    };
+                    
                     // Listen to room updates
                     setupRoomListeners();
                     
