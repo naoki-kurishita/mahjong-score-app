@@ -8,6 +8,11 @@
     <meta name="apple-mobile-web-app-title" content="麻雀スコア">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
     <title>🀄 麻雀スコア計算機</title>
     <style>
         * {
@@ -532,10 +537,74 @@
 
         <!-- Navigation -->
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('setup')">セットアップ</button>
+            <button class="nav-tab active" onclick="switchTab('room')">ルーム</button>
+            <button class="nav-tab" onclick="switchTab('setup')">セットアップ</button>
             <button class="nav-tab" onclick="switchTab('game')" id="gameTab">ゲーム</button>
             <button class="nav-tab" onclick="switchTab('scoreboard')">スコア</button>
             <button class="nav-tab" onclick="switchTab('history')">履歴</button>
+        </div>
+
+        <!-- Room Selection Section -->
+        <div id="roomContent" class="content active">
+            <div class="section-title">🔗 ゲームルーム</div>
+            
+            <div id="roomSelection" style="display: block;">
+                <div style="background: #dbeafe; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 1em; color: #1e40af; font-weight: 600; margin-bottom: 8px;">
+                        リアルタイム同期機能
+                    </div>
+                    <div style="font-size: 0.9em; color: #64748b; line-height: 1.6;">
+                        4人が同じルームに参加すると、誰かが点数を入力すると全員の画面に自動反映されます
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="createRoom()" style="margin-bottom: 15px;">
+                    <span>➕</span>
+                    <span>新しいゲームを作成</span>
+                </button>
+
+                <div style="text-align: center; margin: 20px 0; color: #94a3b8; font-size: 0.9em;">
+                    または
+                </div>
+
+                <div class="settings-group">
+                    <label class="settings-label">ルームコードを入力</label>
+                    <input type="text" class="settings-input" id="roomCodeInput" placeholder="例: A7B3" maxlength="4" style="text-transform: uppercase; text-align: center; font-size: 1.3em; font-weight: 700; letter-spacing: 0.1em;">
+                </div>
+
+                <button class="btn btn-success" onclick="joinRoom()">
+                    <span>🚪</span>
+                    <span>ルームに参加</span>
+                </button>
+
+                <div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 0.85em; color: #92400e;">
+                        💡 <strong>ヒント:</strong> ホストが作成したルームコードを他の3人に伝えて参加してもらいましょう
+                    </div>
+                </div>
+            </div>
+
+            <div id="roomInfo" style="display: none;">
+                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 0.9em; margin-bottom: 8px;">接続中のルーム</div>
+                    <div style="font-size: 2.5em; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 8px;" id="currentRoomCode"></div>
+                    <div style="font-size: 0.85em; opacity: 0.9;">このコードを他のプレイヤーに共有</div>
+                </div>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #475569;">参加者（<span id="participantCount">0</span>/4）</div>
+                    <div id="participantList"></div>
+                </div>
+
+                <button class="btn btn-primary" onclick="startGameFromRoom()">
+                    <span>🎮</span>
+                    <span>ゲーム開始</span>
+                </button>
+
+                <button class="btn btn-danger" onclick="leaveRoom()" style="margin-top: 10px;">
+                    ルームから退出
+                </button>
+            </div>
         </div>
 
         <!-- Setup Section -->
@@ -545,19 +614,19 @@
                 <div class="player-inputs">
                     <div class="player-input-group">
                         <div class="player-number">1</div>
-                        <input type="text" class="input-field" id="player1" placeholder="プレイヤー1" value="サトウ">
+                        <input type="text" class="input-field" id="player1" placeholder="プレイヤー1" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">2</div>
-                        <input type="text" class="input-field" id="player2" placeholder="プレイヤー2" value="ミヤオ">
+                        <input type="text" class="input-field" id="player2" placeholder="プレイヤー2" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">3</div>
-                        <input type="text" class="input-field" id="player3" placeholder="プレイヤー3" value="ウシジマ">
+                        <input type="text" class="input-field" id="player3" placeholder="プレイヤー3" value="">
                     </div>
                     <div class="player-input-group">
                         <div class="player-number">4</div>
-                        <input type="text" class="input-field" id="player4" placeholder="プレイヤー4" value="クリシタ">
+                        <input type="text" class="input-field" id="player4" placeholder="プレイヤー4" value="">
                     </div>
                 </div>
             </div>
@@ -574,17 +643,17 @@
 
             <div class="settings-group">
                 <label class="settings-label">ウマ（1位 / 4位は自動で反対の値）</label>
-                <input type="number" class="settings-input" id="uma1" value="25" oninput="updateUmaDisplay()">
+                <input type="number" class="settings-input" id="uma1" value="25" oninput="updateUmaDisplay(); syncSettingsInput('uma1')">
             </div>
 
             <div class="settings-group">
                 <label class="settings-label">ウマ（2位 / 3位は自動で反対の値）</label>
-                <input type="number" class="settings-input" id="uma2" value="10" oninput="updateUmaDisplay()">
+                <input type="number" class="settings-input" id="uma2" value="10" oninput="updateUmaDisplay(); syncSettingsInput('uma2')">
             </div>
 
             <div class="settings-group">
                 <label class="settings-label">トビウマ</label>
-                <input type="number" class="settings-input" id="tobiuma" value="10">
+                <input type="number" class="settings-input" id="tobiuma" value="10" oninput="syncSettingsInput('tobiuma')">
                 <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
                     ※ マイナス点が出た場合、トバした人に加算されます
                 </div>
@@ -592,7 +661,7 @@
 
             <div class="settings-group">
                 <label class="settings-label">チップ単価</label>
-                <input type="number" class="settings-input" id="chipPrice" value="5">
+                <input type="number" class="settings-input" id="chipPrice" value="2" oninput="syncSettingsInput('chipPrice')">
                 <div style="font-size: 0.85em; color: #64748b; margin-top: 8px;">
                     ※ チップ1枚あたりのポイント
                 </div>
@@ -608,6 +677,12 @@
         <div id="gameContent" class="content">
             <div class="round-info">
                 <div class="round-number" id="roundNumber">第1回戦</div>
+            </div>
+
+            <div style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 0.9em; color: #1e40af;">
+                    💡 <strong style="background: #ef4444; color: white; padding: 4px 10px; border-radius: 4px;">±</strong>ボタン：マイナス点の時に数字を入力してからタップしてください
+                </div>
             </div>
 
             <div class="validation-error" id="validationError"></div>
@@ -629,7 +704,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-success" onclick="saveRound()">
+            <button class="btn btn-success" onclick="saveRound()" id="saveRoundBtn">
                 <span>✓</span>
                 <span>スコア確定</span>
             </button>
@@ -638,10 +713,9 @@
                 編集をキャンセル
             </button>
 
-            <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="switchTab('scoreboard')">スコアボード</button>
-                <button class="btn btn-danger" onclick="showChipInput()">ゲーム終了</button>
-            </div>
+            <button class="btn btn-secondary" onclick="switchTab('scoreboard')" style="margin-top: 20px;">
+                スコアボード
+            </button>
         </div>
 
         <!-- Chip Input Section -->
@@ -674,7 +748,12 @@
         <!-- Scoreboard Section -->
         <div id="scoreboardContent" class="content">
             <div class="scoreboard">
-                <div class="scoreboard-header">現在のスコア</div>
+                <div class="scoreboard-header">
+                    現在のスコア
+                    <div id="scoreboardRoundInfo" style="font-size: 0.9em; color: white; font-weight: 500; margin-top: 5px;">
+                        <!-- Round info will be displayed here -->
+                    </div>
+                </div>
                 <table class="scoreboard-table">
                     <thead>
                         <tr>
@@ -689,8 +768,12 @@
                 </table>
             </div>
 
-            <button class="btn btn-primary" onclick="switchTab('game')" style="margin-top: 20px;">
+            <button class="btn btn-primary" id="nextRoundBtn" onclick="switchTab('game')" style="margin-top: 20px;">
                 次の回戦へ
+            </button>
+
+            <button class="btn btn-danger" id="endGameBtn" onclick="showChipInput()" style="margin-top: 10px;">
+                ゲーム終了
             </button>
         </div>
 
@@ -710,6 +793,54 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // ============================================================
+        // 🔥 Firebase設定 - ここを編集してください！
+        // ============================================================
+        // 
+        // 【手順】
+        // 1. Firebaseコンソール (https://console.firebase.google.com) を開く
+        // 2. プロジェクト設定 → マイアプリ → ウェブアプリの設定をコピー
+        // 3. 下の「YOUR_API_KEY」などの部分を実際の値に置き換える
+        // 
+        // 【例】
+        // apiKey: "AIzaSyABC123def456GHI789jkl012MNO345pqr",
+        // authDomain: "mahjong-12345.firebaseapp.com",
+        // など
+        //
+        // ============================================================
+        
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",                                              // ← ここを置き換え
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",                       // ← ここを置き換え
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",  // ← ここを置き換え
+            projectId: "YOUR_PROJECT_ID",                                        // ← ここを置き換え
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",                        // ← ここを置き換え
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",                       // ← ここを置き換え
+            appId: "YOUR_APP_ID"                                                 // ← ここを置き換え
+        };
+        
+        // ============================================================
+        // ここまで編集
+        // ============================================================
+
+        // Initialize Firebase
+        let firebaseApp = null;
+        let database = null;
+        let currentRoomRef = null;
+        let currentRoomCode = null;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                console.log('Firebase initialized successfully');
+            } else {
+                console.warn('Firebase not configured. Using local mode only.');
+            }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+        }
+
         // Game State
         let gameState = {
             players: [],
@@ -723,16 +854,399 @@
                 uma3: -10,
                 uma4: -25,
                 tobiuma: 10,
-                chipPrice: 5
+                chipPrice: 2
             },
             gameStarted: false
         };
+
+        // Room Management Functions
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar looking characters
+            let code = '';
+            for (let i = 0; i < 4; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function createRoom() {
+            if (!database) {
+                alert('Firebase が設定されていません。ローカルモードで続行します。');
+                switchTab('setup');
+                return;
+            }
+
+            const roomCode = generateRoomCode();
+            const roomRef = database.ref('rooms/' + roomCode);
+
+            // Check if room already exists
+            roomRef.once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    // Room code already exists, try again
+                    createRoom();
+                } else {
+                    // Create new room
+                    const userName = prompt('あなたの名前を入力してください:', 'プレイヤー1') || 'プレイヤー1';
+                    
+                    roomRef.set({
+                        host: userName,
+                        created: Date.now(),
+                        participants: {
+                            [userName]: { joined: Date.now(), index: 0 }
+                        },
+                        gameState: null
+                    }).then(() => {
+                        joinRoomByCode(roomCode, userName);
+                    });
+                }
+            });
+        }
+
+        function joinRoom() {
+            if (!database) {
+                alert('Firebase が設定されていません。ローカルモードで続行します。');
+                switchTab('setup');
+                return;
+            }
+
+            const roomCode = document.getElementById('roomCodeInput').value.toUpperCase().trim();
+            
+            if (roomCode.length !== 4) {
+                alert('4桁のルームコードを入力してください');
+                return;
+            }
+
+            const userName = prompt('あなたの名前を入力してください:', 'プレイヤー') || 'プレイヤー';
+            joinRoomByCode(roomCode, userName);
+        }
+
+        function joinRoomByCode(roomCode, userName) {
+            const roomRef = database.ref('rooms/' + roomCode);
+
+            roomRef.once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    alert('ルームが見つかりません。コードを確認してください。');
+                    return;
+                }
+
+                const roomData = snapshot.val();
+                const participants = roomData.participants || {};
+                const participantCount = Object.keys(participants).length;
+
+                if (participantCount >= 4) {
+                    alert('このルームは満員です（4/4）');
+                    return;
+                }
+
+                // Add user to participants
+                roomRef.child('participants/' + userName).set({
+                    joined: Date.now(),
+                    index: participantCount
+                }).then(() => {
+                    currentRoomCode = roomCode;
+                    currentRoomRef = roomRef;
+                    
+                    // Save room info to localStorage for reconnection
+                    localStorage.setItem('currentRoomCode', roomCode);
+                    localStorage.setItem('currentUserName', userName);
+                    
+                    // Reset local game state when joining a room
+                    gameState = {
+                        players: [],
+                        rounds: [],
+                        currentRound: 0,
+                        settings: {
+                            initialPoints: 25000,
+                            calculationBase: 30000,
+                            uma1: 25,
+                            uma2: 10,
+                            uma3: -10,
+                            uma4: -25,
+                            tobiuma: 10,
+                            chipPrice: 2
+                        },
+                        gameStarted: false
+                    };
+                    
+                    // Save the reset state to localStorage
+                    localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+                    
+                    // Listen to room updates
+                    setupRoomListeners();
+                    
+                    // Show room info
+                    document.getElementById('roomSelection').style.display = 'none';
+                    document.getElementById('roomInfo').style.display = 'block';
+                    document.getElementById('currentRoomCode').textContent = roomCode;
+                    
+                    showToast(`ルーム ${roomCode} に参加しました`);
+                });
+            });
+        }
+
+        function setupRoomListeners() {
+            if (!currentRoomRef) return;
+
+            // Listen to participants
+            currentRoomRef.child('participants').on('value', (snapshot) => {
+                const participants = snapshot.val() || {};
+                const participantNames = Object.keys(participants);
+                
+                document.getElementById('participantCount').textContent = participantNames.length;
+                
+                const listHTML = participantNames.map((name, index) => 
+                    `<div style="padding: 8px; background: white; border-radius: 6px; margin-bottom: 5px;">
+                        ${index + 1}. ${name}
+                    </div>`
+                ).join('');
+                
+                document.getElementById('participantList').innerHTML = listHTML;
+                
+                // Auto-fill player names in setup based on join order
+                const sortedParticipants = participantNames.map(name => ({
+                    name: name,
+                    index: participants[name].index,
+                    joined: participants[name].joined
+                })).sort((a, b) => a.joined - b.joined);
+                
+                sortedParticipants.forEach((participant, index) => {
+                    if (index < 4) {
+                        const playerInput = document.getElementById(`player${index + 1}`);
+                        if (playerInput) {
+                            playerInput.value = participant.name;
+                        }
+                    }
+                });
+            });
+
+            // Listen to game state updates
+            currentRoomRef.child('gameState').on('value', (snapshot) => {
+                console.log('=== gameState listener triggered ===');
+                const roomGameState = snapshot.val();
+                console.log('Received gameState from Firebase:', roomGameState);
+                
+                if (roomGameState) {
+                    const wasNotStarted = !gameState.gameStarted;
+                    const nowStarted = roomGameState.gameStarted;
+                    
+                    console.log('wasNotStarted:', wasNotStarted);
+                    console.log('nowStarted:', nowStarted);
+                    
+                    // Update local game state from room
+                    Object.assign(gameState, roomGameState);
+                    updateUI();
+                    updateScoreboard();
+                    updateHistory();
+                    
+                    // If game just started, switch to game tab
+                    if (wasNotStarted && nowStarted) {
+                        console.log('🎮 Game just started! Switching to game tab...');
+                        
+                        // Enable game tab
+                        document.getElementById('gameTab').style.pointerEvents = 'auto';
+                        document.getElementById('gameTab').style.opacity = '1';
+                        
+                        // Switch to game tab
+                        switchTab('game');
+                        showToast('ゲームが開始されました！');
+                    } else {
+                        console.log('Not switching tabs. wasNotStarted:', wasNotStarted, 'nowStarted:', nowStarted);
+                    }
+                } else {
+                    console.log('No gameState received from Firebase');
+                }
+            });
+            
+            // Listen for game end event
+            currentRoomRef.child('gameEnded').on('value', (snapshot) => {
+                console.log('=== gameEnded listener triggered ===');
+                const gameEnded = snapshot.val();
+                console.log('gameEnded value:', gameEnded);
+                
+                if (gameEnded) {
+                    console.log('🏁 Game ended - hiding buttons');
+                    
+                    // Hide next round button
+                    const nextRoundBtn = document.getElementById('nextRoundBtn');
+                    console.log('nextRoundBtn element:', nextRoundBtn);
+                    if (nextRoundBtn) {
+                        nextRoundBtn.style.display = 'none';
+                        console.log('✅ nextRoundBtn hidden');
+                    } else {
+                        console.warn('⚠️ nextRoundBtn not found');
+                    }
+                    
+                    // Hide end game button
+                    const endGameBtn = document.getElementById('endGameBtn');
+                    console.log('endGameBtn element:', endGameBtn);
+                    if (endGameBtn) {
+                        endGameBtn.style.display = 'none';
+                        console.log('✅ endGameBtn hidden');
+                    } else {
+                        console.warn('⚠️ endGameBtn not found');
+                    }
+                } else {
+                    console.log('gameEnded is false or null, not hiding buttons');
+                }
+            });
+            
+            // Setup listener for settings inputs (uma, tobiuma, chipPrice)
+            setupSettingsListeners();
+        }
+
+        function leaveRoom() {
+            if (!currentRoomRef || !confirm('ルームから退出しますか？')) return;
+
+            // Remove listeners
+            currentRoomRef.off();
+            
+            // Clear saved room info
+            localStorage.removeItem('currentRoomCode');
+            localStorage.removeItem('currentUserName');
+            
+            currentRoomRef = null;
+            currentRoomCode = null;
+            
+            document.getElementById('roomSelection').style.display = 'block';
+            document.getElementById('roomInfo').style.display = 'none';
+            document.getElementById('roomCodeInput').value = '';
+            
+            showToast('ルームから退出しました');
+        }
+
+        // Sync settings input to Firebase
+        function syncSettingsInput(fieldId) {
+            const input = document.getElementById(fieldId);
+            const value = input.value;
+            
+            if (currentRoomRef) {
+                currentRoomRef.child(`settingsInputs/${fieldId}`).set(value || null);
+            }
+        }
+
+        // Setup listener for settings inputs
+        function setupSettingsListeners() {
+            if (!currentRoomRef) return;
+            
+            currentRoomRef.child('settingsInputs').on('value', (snapshot) => {
+                const inputs = snapshot.val();
+                if (inputs) {
+                    ['uma1', 'uma2', 'tobiuma', 'chipPrice'].forEach(fieldId => {
+                        const input = document.getElementById(fieldId);
+                        if (input && document.activeElement !== input && inputs[fieldId] !== undefined) {
+                            input.value = inputs[fieldId] || '';
+                        }
+                    });
+                }
+            });
+        }
+
+        function startGameFromRoom() {
+            currentRoomRef.child('participants').once('value').then((snapshot) => {
+                const participants = snapshot.val() || {};
+                const participantNames = Object.keys(participants);
+                
+                if (participantNames.length < 2) {
+                    alert('最低2人のプレイヤーが必要です');
+                    return;
+                }
+
+                // Check if player names are filled in setup
+                const player1 = document.getElementById('player1').value.trim();
+                const player2 = document.getElementById('player2').value.trim();
+                const player3 = document.getElementById('player3').value.trim();
+                const player4 = document.getElementById('player4').value.trim();
+                
+                if (!player1 || !player2) {
+                    alert('プレイヤー名が設定されていません。セットアップ画面を確認してください。');
+                    switchTab('setup');
+                    return;
+                }
+                
+                // Start the game directly
+                startGame();
+            });
+        }
+
+        // Sync game state to Firebase
+        function syncGameState() {
+            console.log('=== syncGameState called ===');
+            console.log('currentRoomRef exists:', !!currentRoomRef);
+            console.log('gameState.gameStarted:', gameState.gameStarted);
+            
+            if (currentRoomRef && gameState.gameStarted) {
+                console.log('Syncing game state to Firebase...');
+                currentRoomRef.child('gameState').set(gameState)
+                    .then(() => {
+                        console.log('✅ Game state synced successfully');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to sync game state:', error);
+                    });
+                
+                // Notify that game has started
+                currentRoomRef.child('gameStarted').set(true)
+                    .then(() => {
+                        console.log('✅ gameStarted flag set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameStarted flag:', error);
+                    });
+            } else {
+                console.warn('⚠️ Not syncing: currentRoomRef or gameStarted is false');
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadGameState();
             updateUI();
+            
+            // Auto-reconnect to room if available
+            autoReconnectToRoom();
         });
+        
+        // Auto-reconnect to saved room
+        function autoReconnectToRoom() {
+            if (!database) return;
+            
+            const savedRoomCode = localStorage.getItem('currentRoomCode');
+            const savedUserName = localStorage.getItem('currentUserName');
+            
+            if (savedRoomCode && savedUserName) {
+                console.log('🔄 Auto-reconnecting to room:', savedRoomCode);
+                
+                // Check if room still exists
+                const roomRef = database.ref('rooms/' + savedRoomCode);
+                roomRef.once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        // Room exists, reconnect
+                        currentRoomCode = savedRoomCode;
+                        currentRoomRef = roomRef;
+                        
+                        // Update participant timestamp
+                        roomRef.child('participants/' + savedUserName).update({
+                            reconnected: Date.now()
+                        });
+                        
+                        // Setup listeners
+                        setupRoomListeners();
+                        
+                        // Show room info
+                        document.getElementById('roomSelection').style.display = 'none';
+                        document.getElementById('roomInfo').style.display = 'block';
+                        document.getElementById('currentRoomCode').textContent = savedRoomCode;
+                        
+                        showToast(`ルーム ${savedRoomCode} に再接続しました`);
+                    } else {
+                        // Room no longer exists, clear saved data
+                        console.log('⚠️ Saved room no longer exists');
+                        localStorage.removeItem('currentRoomCode');
+                        localStorage.removeItem('currentUserName');
+                    }
+                });
+            }
+        }
 
         // Update Uma (no display needed, just for consistency)
         function updateUmaDisplay() {
@@ -743,7 +1257,19 @@
         function switchTab(tabName) {
             // Update tab buttons
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
+            
+            // Find and activate the correct tab button
+            const tabButtons = {
+                'room': document.querySelector('.nav-tab:nth-child(1)'),
+                'setup': document.querySelector('.nav-tab:nth-child(2)'),
+                'game': document.querySelector('.nav-tab:nth-child(3)'),
+                'scoreboard': document.querySelector('.nav-tab:nth-child(4)'),
+                'history': document.querySelector('.nav-tab:nth-child(5)')
+            };
+            
+            if (tabButtons[tabName]) {
+                tabButtons[tabName].classList.add('active');
+            }
 
             // Update content
             document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
@@ -762,6 +1288,9 @@
 
         // Start Game
         function startGame() {
+            console.log('=== startGame called ===');
+            console.log('currentRoomRef:', currentRoomRef);
+            
             const player1 = document.getElementById('player1').value.trim() || 'プレイヤー1';
             const player2 = document.getElementById('player2').value.trim() || 'プレイヤー2';
             const player3 = document.getElementById('player3').value.trim() || 'プレイヤー3';
@@ -781,14 +1310,21 @@
             gameState.settings.uma3 = -gameState.settings.uma2;  // 3rd place is negative of 2nd
             gameState.settings.uma4 = -gameState.settings.uma1;  // 4th place is negative of 1st
             gameState.settings.tobiuma = parseInt(document.getElementById('tobiuma').value) || 10;
-            gameState.settings.chipPrice = parseInt(document.getElementById('chipPrice').value) || 5;
+            gameState.settings.chipPrice = parseInt(document.getElementById('chipPrice').value) || 2;
             
             gameState.currentRound = 1;
             gameState.gameStarted = true;
             gameState.rounds = [];
 
+            console.log('Game state before save:', gameState);
             saveGameState();
             setupScoreInputs();
+            
+            // Show next round button
+            document.getElementById('nextRoundBtn').style.display = 'block';
+            
+            // Show end game button
+            document.getElementById('endGameBtn').style.display = 'block';
             
             // Enable game tab
             document.getElementById('gameTab').style.pointerEvents = 'auto';
@@ -809,18 +1345,112 @@
                 row.className = 'score-input-row';
                 row.innerHTML = `
                     <div class="player-name-display">${player.name}</div>
-                    <input type="number" 
-                           class="score-input" 
-                           id="score${index}" 
-                           placeholder="点数"
-                           inputmode="numeric"
-                           onchange="checkForNegativeScores()">
+                    <div style="display: flex; gap: 8px; flex: 1;">
+                        <button onclick="toggleMinus(${index})" 
+                                class="minus-btn" 
+                                id="minusBtn${index}"
+                                type="button"
+                                style="padding: 15px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px; transition: background 0.3s;">
+                            ±
+                        </button>
+                        <input type="tel" 
+                               class="score-input" 
+                               id="score${index}" 
+                               placeholder="点数"
+                               onchange="checkForNegativeScores()"
+                               oninput="syncScoreInput(${index})"
+                               style="flex: 1;">
+                    </div>
                 `;
                 container.appendChild(row);
             });
 
             document.getElementById('roundNumber').textContent = `第${gameState.currentRound}回戦`;
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Listen for score input updates from other players
+            if (currentRoomRef) {
+                currentRoomRef.child('currentInputs').on('value', (snapshot) => {
+                    const inputs = snapshot.val();
+                    if (inputs) {
+                        Object.keys(inputs).forEach(playerIndex => {
+                            const input = document.getElementById(`score${playerIndex}`);
+                            if (input && document.activeElement !== input) {
+                                // Only update if this input is not currently focused
+                                input.value = inputs[playerIndex] || '';
+                            }
+                        });
+                        checkForNegativeScores();
+                    }
+                });
+            }
+        }
+
+        // Toggle minus sign
+        function toggleMinus(playerIndex) {
+            const input = document.getElementById(`score${playerIndex}`);
+            const btn = document.getElementById(`minusBtn${playerIndex}`);
+            let value = input.value.trim();
+            
+            if (value === '' || value === '0') {
+                // Do nothing if empty or zero
+                return;
+            }
+            
+            if (value.startsWith('-')) {
+                // Remove minus
+                input.value = value.substring(1);
+                btn.style.background = '#ef4444';
+            } else {
+                // Add minus
+                input.value = '-' + value;
+                btn.style.background = '#059669';
+            }
+            
+            syncScoreInput(playerIndex);
+            checkForNegativeScores();
+        }
+
+        // Toggle minus sign for chip input
+        function toggleChipMinus(playerIndex) {
+            const input = document.getElementById(`chip${playerIndex}`);
+            const btn = document.getElementById(`chipMinusBtn${playerIndex}`);
+            let value = input.value.trim();
+            
+            if (value === '' || value === '0') {
+                // Do nothing if empty or zero
+                return;
+            }
+            
+            if (value.startsWith('-')) {
+                // Remove minus
+                input.value = value.substring(1);
+                btn.style.background = '#ef4444';
+            } else {
+                // Add minus
+                input.value = '-' + value;
+                btn.style.background = '#059669';
+            }
+        }
+
+        // Sync score input to Firebase
+        function syncScoreInput(playerIndex) {
+            const input = document.getElementById(`score${playerIndex}`);
+            const value = input.value;
+            
+            // Clear validation error when user starts typing/changing
+            hideValidationError();
+            
+            if (currentRoomRef) {
+                currentRoomRef.child(`currentInputs/${playerIndex}`).set(value || null);
+            }
+        }
+
+        // Clear current inputs when saving round
+        function clearCurrentInputs() {
+            if (currentRoomRef) {
+                currentRoomRef.child('currentInputs').remove();
+            }
         }
 
         // Check for negative scores
@@ -838,6 +1468,11 @@
                         hasNegative = true;
                     }
                 }
+            }
+
+            // Clear validation error when user is typing
+            if (scores.length === 4) {
+                hideValidationError();
             }
 
             const tobiSelection = document.getElementById('tobiSelection');
@@ -1046,6 +1681,9 @@
                 document.getElementById(`score${i}`).value = '';
             }
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Clear Firebase current inputs
+            clearCurrentInputs();
 
             // Reset button text and hide cancel button
             const saveButton = document.querySelector('#gameContent .btn-success');
@@ -1060,14 +1698,20 @@
 
         // Save Round
         function saveRound() {
+            console.log('=== saveRound called ===');
+            
             const scores = [];
             let hasNegative = false;
             
             for (let i = 0; i < 4; i++) {
                 const scoreInput = document.getElementById(`score${i}`);
-                const score = parseInt(scoreInput.value);
+                const scoreText = scoreInput.value.trim();
+                const score = parseInt(scoreText);
                 
-                if (isNaN(score)) {
+                console.log(`Player ${i+1}: input="${scoreText}", parsed=${score}`);
+                
+                if (isNaN(score) || scoreText === '') {
+                    console.log('ERROR: Missing or invalid score');
                     showValidationError('すべてのプレイヤーの点数を入力してください');
                     return;
                 }
@@ -1077,6 +1721,9 @@
                     hasNegative = true;
                 }
             }
+            
+            console.log('All scores:', scores);
+            console.log('Total:', scores.reduce((a, b) => a + b, 0));
 
             // Validate scores total (must be 100,000)
             const validation = validateScores(scores);
@@ -1117,6 +1764,10 @@
 
                 // Add new scores to player totals
                 gameState.players.forEach((player, index) => {
+                    // Ensure rounds array exists
+                    if (!player.rounds) {
+                        player.rounds = [];
+                    }
                     player.totalPoints += finalScores[index].finalScore;
                     player.rounds[editingRoundIndex] = finalScores[index];
                 });
@@ -1134,6 +1785,10 @@
 
                 // Update player totals
                 gameState.players.forEach((player, index) => {
+                    // Ensure rounds array exists
+                    if (!player.rounds) {
+                        player.rounds = [];
+                    }
                     player.rounds.push(finalScores[index]);
                     player.totalPoints += finalScores[index].finalScore;
                 });
@@ -1149,6 +1804,9 @@
                 document.getElementById(`score${i}`).value = '';
             }
             document.getElementById('tobiSelection').style.display = 'none';
+            
+            // Clear Firebase current inputs
+            clearCurrentInputs();
 
             // Reset button text
             const saveButton = document.querySelector('#gameContent .btn-success');
@@ -1173,6 +1831,17 @@
         function updateScoreboard() {
             const tbody = document.getElementById('scoreboardBody');
             tbody.innerHTML = '';
+            
+            // Update round info
+            const roundInfo = document.getElementById('scoreboardRoundInfo');
+            if (roundInfo) {
+                const totalRounds = gameState.rounds.length;
+                if (totalRounds > 0) {
+                    roundInfo.textContent = `（全${totalRounds}回戦）`;
+                } else {
+                    roundInfo.textContent = '';
+                }
+            }
 
             if (gameState.rounds.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 40px; color: #94a3b8;">まだスコアがありません</td></tr>';
@@ -1182,13 +1851,9 @@
             // Sort players by total points
             const sortedPlayers = [...gameState.players].sort((a, b) => b.totalPoints - a.totalPoints);
 
-            // Calculate total sum for debugging
-            let totalSum = 0;
-            
             sortedPlayers.forEach((player, index) => {
                 const rank = index + 1;
                 const roundedScore = Math.round(player.totalPoints);
-                totalSum += roundedScore;
                 
                 // Show chip info if available
                 let chipInfo = '';
@@ -1213,27 +1878,12 @@
                 `;
                 tbody.appendChild(row);
             });
-
-            // Add total row for debugging
-            const totalRow = document.createElement('tr');
-            totalRow.style.borderTop = '2px solid #000';
-            totalRow.style.fontWeight = 'bold';
-            totalRow.innerHTML = `
-                <td colspan="2" style="text-align: right; padding: 15px 12px;">合計</td>
-                <td style="text-align: right; padding: 15px 12px;">
-                    <span style="color: ${totalSum === 0 ? '#10b981' : '#ef4444'};">
-                        ${totalSum}
-                    </span>
-                </td>
-            `;
-            tbody.appendChild(totalRow);
             
             console.log('=== Scoreboard Debug ===');
             console.log('Total rounds:', gameState.rounds.length);
             gameState.players.forEach((player, idx) => {
                 console.log(`${player.name}: ${Math.round(player.totalPoints)} (raw: ${player.totalPoints})`);
             });
-            console.log('Sum:', totalSum);
         }
 
         // Update History
@@ -1337,17 +1987,28 @@
                 const chipCount = player.chips || 0;
                 const row = document.createElement('div');
                 row.className = 'player-input-group';
+                const isNegative = chipCount < 0;
+                const btnColor = isNegative ? '#059669' : '#ef4444';
+                
                 row.innerHTML = `
                     <div class="player-number">${index + 1}</div>
                     <div style="flex: 1; display: flex; flex-direction: column;">
                         <div style="font-weight: 600; margin-bottom: 5px;">${player.name}</div>
-                        <input type="number" 
-                               class="input-field" 
-                               id="chip${index}" 
-                               placeholder="チップ数"
-                               value="${chipCount}"
-                               inputmode="numeric"
-                               style="margin: 0;">
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="toggleChipMinus(${index})" 
+                                    class="minus-btn" 
+                                    id="chipMinusBtn${index}"
+                                    type="button"
+                                    style="padding: 15px 20px; background: ${btnColor}; color: white; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; min-width: 60px; transition: background 0.3s;">
+                                ±
+                            </button>
+                            <input type="tel" 
+                                   class="input-field" 
+                                   id="chip${index}" 
+                                   placeholder="チップ数"
+                                   value="${chipCount}"
+                                   style="margin: 0; flex: 1;">
+                        </div>
                     </div>
                 `;
                 container.appendChild(row);
@@ -1405,29 +2066,48 @@
             updateScoreboard();
             hideValidationError();
             
+            // Hide next round button since game is ending
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            
+            // Hide end game button since game is ending
+            document.getElementById('endGameBtn').style.display = 'none';
+            
             // Show final results
             switchTab('scoreboard');
             showToast('チップを反映しました！');
             
-            // Show end game dialog after a short delay
-            setTimeout(() => {
-                if (confirm('ゲームを終了しますか？スコアボードを確認してから終了してください。')) {
-                    endGame();
-                }
-            }, 1000);
+            // Notify all players that game has ended
+            if (currentRoomRef) {
+                console.log('📡 Notifying game end from applyChipsAndFinish');
+                currentRoomRef.child('gameEnded').set(true)
+                    .then(() => {
+                        console.log('✅ gameEnded set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameEnded:', error);
+                    });
+                    
+                // Reset the flag after a moment
+                setTimeout(() => {
+                    currentRoomRef.child('gameEnded').set(false);
+                }, 500);
+            }
         }
 
         // Skip Chips and Finish
         function skipChipsAndFinish() {
-            if (confirm('チップなしでゲームを終了しますか？')) {
-                endGame();
-            }
+            // Hide buttons since game is ending
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('endGameBtn').style.display = 'none';
+            
+            // End game without confirmation
+            endGame();
         }
 
         // End Game
         function endGame() {
-            if (!confirm('ゲームを終了しますか？')) return;
-
+            console.log('🔴 === endGame function called ===');
+            
             gameState = {
                 players: [],
                 rounds: [],
@@ -1440,12 +2120,54 @@
                     uma3: -10,
                     uma4: -25,
                     tobiuma: 10,
-                    chipPrice: 5
+                    chipPrice: 2
                 },
                 gameStarted: false
             };
 
             saveGameState();
+            
+            // Notify all players that game has ended
+            console.log('=== Notifying game end ===');
+            console.log('currentRoomRef exists:', !!currentRoomRef);
+            
+            if (currentRoomRef) {
+                console.log('Setting gameEnded to true...');
+                currentRoomRef.child('gameEnded').set(true)
+                    .then(() => {
+                        console.log('✅ gameEnded set to true');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Failed to set gameEnded:', error);
+                    });
+                    
+                // Reset the flag after a moment
+                setTimeout(() => {
+                    console.log('Resetting gameEnded to false...');
+                    currentRoomRef.child('gameEnded').set(false)
+                        .then(() => {
+                            console.log('✅ gameEnded reset to false');
+                        })
+                        .catch((error) => {
+                            console.error('❌ Failed to reset gameEnded:', error);
+                        });
+                }, 500);
+            } else {
+                console.warn('⚠️ currentRoomRef is null, not syncing');
+            }
+            
+            // Hide next round button
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+            if (nextRoundBtn) {
+                nextRoundBtn.style.display = 'none';
+            }
+            
+            // Hide end game button
+            const endGameBtn = document.getElementById('endGameBtn');
+            if (endGameBtn) {
+                endGameBtn.style.display = 'none';
+            }
+            
             switchTab('setup');
             showToast('ゲームを終了しました');
         }
@@ -1492,12 +2214,22 @@
         // Local Storage
         function saveGameState() {
             localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+            syncGameState(); // Sync to Firebase when saving locally
         }
 
         function loadGameState() {
             const saved = localStorage.getItem('mahjongGameState');
             if (saved) {
                 gameState = JSON.parse(saved);
+                
+                // Ensure all players have rounds array
+                if (gameState.players) {
+                    gameState.players.forEach(player => {
+                        if (!player.rounds) {
+                            player.rounds = [];
+                        }
+                    });
+                }
             }
         }
 
@@ -1506,6 +2238,29 @@
                 setupScoreInputs();
                 updateScoreboard();
                 updateHistory();
+                
+                // Show next round button when game is active
+                const nextRoundBtn = document.getElementById('nextRoundBtn');
+                if (nextRoundBtn) {
+                    nextRoundBtn.style.display = 'block';
+                }
+                
+                // Show end game button when game is active
+                const endGameBtn = document.getElementById('endGameBtn');
+                if (endGameBtn) {
+                    endGameBtn.style.display = 'block';
+                }
+            } else {
+                // Hide buttons when game is not started
+                const nextRoundBtn = document.getElementById('nextRoundBtn');
+                if (nextRoundBtn) {
+                    nextRoundBtn.style.display = 'none';
+                }
+                
+                const endGameBtn = document.getElementById('endGameBtn');
+                if (endGameBtn) {
+                    endGameBtn.style.display = 'none';
+                }
             }
         }
 
